@@ -23,7 +23,12 @@ public:
     
     ofColor color;
     
-    void setup(float r, float x);
+    int red;
+    
+    int difference;
+    int playerF;
+    
+    void setup(float r, int f, int d, float x);
     void update();
     void draw();
     

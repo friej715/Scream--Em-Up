@@ -8,6 +8,11 @@
 #include "Player.h"
 #include "ofxOsc.h"
 
+// now we set the ports for our OSC messages
+#define PORT1 8000 // player 1, 8000 for now
+#define PORT2 8001 // player 2, 8001 for now
+
+
 // uncomment this to read from two kinects simultaneously
 //#define USE_TWO_KINECTS
 
@@ -26,6 +31,10 @@ public:
 	void mousePressed(int x, int y, int button);
 	void mouseReleased(int x, int y, int button);
 	void windowResized(int w, int h);
+    
+    // game functions
+    void addBullets();
+    void checkBullets();
 	
 	ofxKinect kinect;
 	
@@ -110,6 +119,10 @@ public:
     vector<float> oldYell;
     bool compareYells();
     void checkIfYelling();
+    
+    // babby's first fft variables. let's just go with one int (for the location of the max) rather than a vector. although we'll want a vector for point bonuses so we can smooth and see how long they're the same, probably.
+    int p1MaxLocForFFT;
+    int p2MaxLocForFFT;
     
     // visual effect tryout
     float shakeSensitivity;

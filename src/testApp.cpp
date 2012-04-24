@@ -66,8 +66,8 @@ void testApp::setup() {
     maxShake = 20;
     
     // OSC port stuff--will need 2 for 2 players, duh
-    receiverP1.setup(8017);
-    receiverP2.setup(8018);
+    receiverP1.setup(8000);
+    receiverP2.setup(8001);
     
     grayImageOn = true;
     
@@ -77,7 +77,7 @@ void testApp::setup() {
     gameStartTime = ofGetElapsedTimeMillis();
     
     // gamestate
-    gameState = 0;
+    gameState = 1;
     
     
     enemyTimer = 0;
@@ -88,9 +88,12 @@ void testApp::setup() {
 void testApp::update() {
     bulletTimerP1++; // this can always go up without a problem
     bulletTimerP2++; // bullet timer
-	kinect.update();
-    checkIfYelling();
-        enemyTimer++;
+    enemyTimer++; // timer for enemies; only relevant if not using text file
+    
+	kinect.update(); // updating kinect, obvs
+    
+    
+    checkIfYelling(); // ALWAYS want to check if yelling. it's how we control anything, including starting, restarting, etc.
     
     
     // ----- titlescreen -----
@@ -101,224 +104,86 @@ void testApp::update() {
         }
     }
     
-    
-    if (enemyTimer > enemyTime) {
-        enemyTimer = 0;
-        Enemy e;
-        e.setup(ofRandom(ofGetWidth()), 0);
-        enemies.push_back(e);
-    }
-    
-    
-    //    if (gameState == 1) {
-    //        if (enemyTimeSpawn.size()>0){
-    //            if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
-    //                // spawn new enemy
-    //                Enemy e;
-    //                e.setup(enemyXPos[0], enemyYPos[0]);
-    //                enemies.push_back(e);
-    //                // delete from vector
-    //                enemyXPos.erase(enemyXPos.begin());
-    //                enemyYPos.erase(enemyYPos.begin());
-    //                enemyTimeSpawn.erase(enemyTimeSpawn.begin());
-    //            }
-    //        }
-    
-    //        // this may get messy. we need to integrate OSC here, so...
-    //        while (receiverP1.hasWaitingMessages()) {
-    //            ofxOscMessage m;
-    //            receiverP1.getNextMessage(&m);
-    //            
-    //            // and now we get the volume from Kampo
-    //            if (m.getAddress() == "/KAMPO_Mic") {
-    //                volumeP1=m.getArgAsFloat(1);
-    //                maxLevelsP1.push_back(volumeP1);
-    //                if (maxLevelsP1.size()>numLevelsToStore) {
-    //                    maxLevelsP1.erase(maxLevelsP1.begin());
-    //                }
-    //            } else {
-    //                // for unrecognized messages. likely not needed but probably useful for debugging
-    //            }
-    //        }
-    //        
-    //        while (receiverP2.hasWaitingMessages()) {
-    //            ofxOscMessage m;
-    //            receiverP2.getNextMessage(&m);
-    //            
-    //            // and now we get the volume from Kampo
-    //            if (m.getAddress() == "/KAMPO_Mic") {
-    //                volumeP2=m.getArgAsFloat(1);
-    //                maxLevelsP2.push_back(volumeP2);
-    //                if (maxLevelsP2.size()>numLevelsToStore) {
-    //                    maxLevelsP2.erase(maxLevelsP2.begin());
-    //                }
-    //            } else {
-    //                // for unrecognized messages. likely not needed but probably useful for debugging
-    //            }
-    //        }
-    //        
-    //        //set max level as the average of our recently recorded levels
-    //        //p1
-    //        maxLevelP1=0.0;
-    //        for (int i=0; i<maxLevelsP1.size(); i++){
-    //            maxLevelP1+= maxLevelsP1[i];
-    //        }
-    //        maxLevelP1/= (float)maxLevelsP1.size();
-    //        
-    //        //p2
-    //        maxLevelP2=0.0;
-    //        for (int i=0; i<maxLevelsP2.size(); i++){
-    //            maxLevelP2+= maxLevelsP2[i];
-    //        }
-    //        maxLevelP2/= (float)maxLevelsP2.size();
-    
-    // there is a new frame and we are connected
-    if(kinect.isFrameNew()) {
-        
-        // load grayscale depth image from the kinect source
-        grayImage.setFromPixels(kinect.getDepthPixels(), kinect.width, kinect.height);
-        grayImage.mirror(false, true);
-        
-        // we do two thresholds - one for the far plane and one for the near plane
-        // we then do a cvAnd to get the pixels which are a union of the two thresholds
-        
-        // update the cv images
-        grayImage.flagImageChanged();
-        
-        if (bLearnBackground) {
-            grayBg = grayImage;
-            bLearnBackground = false;
-        }
-        
-        grayDiff.absDiff(grayBg, grayImage);
-        grayDiff.threshold(threshold);
-        
-        
-        // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
-        // also, find holes is set to true so we will get interior contours as well....
-        contourFinder.findContours(grayDiff, 10, (kinect.width*kinect.height)/2, 1, false);
-        
-    }
+    //    use the below code if you just want enemies to pop out whenever (i.e. if you want to test general stuff, not levels)
+    //    if (enemyTimer > enemyTime) {
+    //        enemyTimer = 0;
+    //        Enemy e;
+    //        e.setup(ofRandom(ofGetWidth()), 0);
+    //        enemies.push_back(e);
+    //    }
     
     
-    // game stuff!
-    
-    //   cout << maxLevel << endl;
-    
-    
-    // checking P1 bullets against enemies
-    for (int i = 0; i < enemies.size(); i++) {
-        for (int k = 0; k < bulletsP1.size(); k++) {
-            if (ofDist(enemies[i].xPos, enemies[i].yPos, bulletsP1[k].xPos, bulletsP1[k].yPos) < 30) {
-                enemies.erase(enemies.begin()+i);
-                bulletsP1.erase(bulletsP1.begin()+i);
-                player1.numKilled++;
+    if (gameState == 1) {
+        if (enemyTimeSpawn.size()>0){
+            if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
+                // spawn new enemy
+                Enemy e;
+                e.setup(enemyXPos[0], enemyYPos[0]);
+                enemies.push_back(e);
+                // delete from vector
+                enemyXPos.erase(enemyXPos.begin());
+                enemyYPos.erase(enemyYPos.begin());
+                enemyTimeSpawn.erase(enemyTimeSpawn.begin());
             }
         }
-    }
-    
-    // checking P2 bullets against enemies
-    for (int i = 0; i < enemies.size(); i++) {
-        for (int k = 0; k < bulletsP2.size(); k++) {
-            if (ofDist(enemies[i].xPos, enemies[i].yPos, bulletsP2[k].xPos, bulletsP2[k].yPos) < 30) {
-                enemies.erase(enemies.begin()+i);
-                bulletsP2.erase(bulletsP2.begin()+i);
-                player2.numKilled++;
+        
+        // there is a new frame and we are connected
+        if(kinect.isFrameNew()) { // we only really care about this if we're in gamestate 1
+            
+            // load grayscale depth image from the kinect source
+            grayImage.setFromPixels(kinect.getDepthPixels(), kinect.width, kinect.height);
+            grayImage.mirror(false, true);
+            
+            // we do two thresholds - one for the far plane and one for the near plane
+            // we then do a cvAnd to get the pixels which are a union of the two thresholds
+            
+            // update the cv images
+            grayImage.flagImageChanged();
+            
+            if (bLearnBackground) {
+                grayBg = grayImage;
+                bLearnBackground = false;
             }
+            
+            grayDiff.absDiff(grayBg, grayImage);
+            grayDiff.threshold(threshold);
+            
+            
+            // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
+            // also, find holes is set to true so we will get interior contours as well....
+            contourFinder.findContours(grayDiff, 10, (kinect.width*kinect.height)/2, 1, false);
+            
         }
-    }
-    
-    for (int i = 0; i < enemies.size(); i++) {
-        enemies[i].update();
-    }
-    
-    // is P1 yelling?
-    //        if (maxLevelP1 > micSensitivity && player1.hasStartedYelling == false) {
-    //            player1.hasStartedYelling = true;
-    //            cout << "start yelling" << endl;
-    //        } 
-    //        
-    //        // is P2 yelling?
-    //        if (maxLevelP2 > micSensitivity && player2.hasStartedYelling == false) {
-    //            player2.hasStartedYelling = true;
-    //            cout << "start yelling" << endl;
-    //        }
-    //        
-    //        // if they have stopped yelling (effectively--they're not hitting the threshold)
-    //        // p1
-    //        if (player1.hasStartedYelling == true && maxLevelP1 <= micSensitivity){
-    //            player1.hasStartedYelling = false;
-    //            cout << "stopyelling" << endl;
-    //            //do whatever should happen when they stop yelling
-    //            compareYells();
-    //        }
-    //        // p2
-    //        if (player2.hasStartedYelling == true && maxLevelP2 <= micSensitivity){
-    //            player2.hasStartedYelling = false;
-    //            cout << "stopyelling" << endl;
-    //            //do whatever should happen when they stop yelling
-    //            compareYells();
-    //        }
-    
-    // shooting bullets
-    // p1
-    
-    if (player1.hasStartedYelling) {
-        if (bulletTimerP1 > bulletTimeP1) {
-            bulletTimerP1 = 0; //resetting the timer
-            Bullet b;
-            b.setup(ofMap(maxLevelP1, 0, .1, 5, 10), player1.xPos);
-            bulletsP1.push_back(b);
+        
+        addBullets(); // adding bullets when yelling; moved to a function because unlikely to change much in this context
+        checkBullets(); // checking bullets; moved to a function because we won't really change it often
+        
+        // update our enemies
+        for (int i = 0; i < enemies.size(); i++) {
+            enemies[i].update();
         }
-    }
-    
-    if (player2.hasStartedYelling) {
-        if (bulletTimerP2 > bulletTimeP2) {
-            cout << "player 2 is yelling" << endl;
-            bulletTimerP2 = 0; //resetting the timer
-            Bullet b;
-            b.setup(ofMap(maxLevelP2, 0, .1, 5, 10), player2.xPos);
-            bulletsP2.push_back(b);
+        
+        // different settings for different blobs "found." really how many blobs are found is set by the blobfinder itself (1, 2)
+        if (contourFinder.nBlobs == 2) {
+            player1.xPos = contourFinder.blobs[0].centroid.x * gameScale;
+            player2.xPos = (contourFinder.blobs[1].centroid.x) * gameScale;
+        } 
+        if (contourFinder.nBlobs == 1) {
+            player1.xPos = contourFinder.blobs[0].centroid.x * gameScale;
         }
-    }
-    
-    // updating bullets and deleting them if they're offscreen
-    // p1
-    for (int i = 0; i < bulletsP1.size(); i++) {
-        bulletsP1[i].update();
-        if (bulletsP1[i].yPos < 0) {
-            bulletsP1.erase(bulletsP1.begin()+i); // iterator helps you quickly access memory locations; this points to first slot, and then you just hop over to yours
+        if (contourFinder.nBlobs == 0) {
+            player1.xPos = 50;
+            player2.xPos = 500;
         }
-    }
-    
-    // updating bullets and deleting them if they're offscreen
-    for (int i = 0; i < bulletsP2.size(); i++) {
-        bulletsP2[i].update();
-        if (bulletsP2[i].yPos < 0) {
-            bulletsP2.erase(bulletsP2.begin()+i); // iterator helps you quickly access memory locations; this points to first slot, and then you just hop over to yours
+        
+        // filling up the yells with the various volumes
+        if (player1.hasStartedYelling == true) { //player is currently yelling.
+            newYellP1.push_back(volumeP1);
         }
-    }
-    
-    if (contourFinder.nBlobs == 2) {
-        player1.xPos = contourFinder.blobs[0].centroid.x * gameScale;
-        player2.xPos = (contourFinder.blobs[1].centroid.x) * gameScale;
-    } 
-    if (contourFinder.nBlobs == 1) {
-        player1.xPos = contourFinder.blobs[0].centroid.x * gameScale;
-    }
-    if (contourFinder.nBlobs == 0) {
-        player1.xPos = 50;
-        player2.xPos = 500;
-    }
-    
-    // competitive yelling aspect
-    
-    if (player1.hasStartedYelling == true) { //player is currently yelling.
-        newYellP1.push_back(volumeP1);
-    }
-    
-    if (player2.hasStartedYelling == true) {
-        newYellP2.push_back(volumeP2);
+        
+        if (player2.hasStartedYelling == true) {
+            newYellP2.push_back(volumeP2);
+        }
     }
 }
 
@@ -464,7 +329,7 @@ void testApp::checkIfYelling() {
         cout << "start yelling" << endl;
     }
     
-    // if they have stopped yelling (effectively--they're not hitting the threshold)
+    // if they have stopped yelling (effectively--they're not hitting the threshold), we should compare their yells
     // p1
     if (player1.hasStartedYelling == true && maxLevelP1 <= micSensitivity){
         player1.hasStartedYelling = false;
@@ -480,34 +345,103 @@ void testApp::checkIfYelling() {
         compareYells();
     }
     
-	// this may get messy. we need to integrate OSC here, so...
+}
+
+//--------------------------------------------------------------
+void testApp::exit() {
+    kinect.setCameraTiltAngle(0); // zero the tilt on exit
+    kinect.close();
+}
+
+//--------------------------------------------------------------
+
+
+void testApp::audioReceived (float * input, int bufferSize, int nChannels){   
+    maxLevel = 0.0f; //reset max to minimum each snd buffer  
+    for (int i = 0; i < bufferSize; i++){  
+        float abs1 = ABS(input[i*2]);   
+        if (maxLevel < abs1) maxLevel = abs1; // grab highest value  
+    }  
+}
+
+//--------------------------------------------------------------
+
+void testApp::checkBullets() {
+    // checking P1 bullets against enemies
+    for (int i = 0; i < enemies.size(); i++) {
+        for (int k = 0; k < bulletsP1.size(); k++) {
+            if (ofDist(enemies[i].xPos, enemies[i].yPos, bulletsP1[k].xPos, bulletsP1[k].yPos) < 30) {
+                enemies.erase(enemies.begin()+i);
+                bulletsP1.erase(bulletsP1.begin()+i);
+                player1.numKilled++;
+            }
+        }
+    }
+    
+    // checking P2 bullets against enemies
+    for (int i = 0; i < enemies.size(); i++) {
+        for (int k = 0; k < bulletsP2.size(); k++) {
+            if (ofDist(enemies[i].xPos, enemies[i].yPos, bulletsP2[k].xPos, bulletsP2[k].yPos) < 30) {
+                enemies.erase(enemies.begin()+i);
+                bulletsP2.erase(bulletsP2.begin()+i);
+                player2.numKilled++;
+            }
+        }
+    }
+    
+    // updating bullets and deleting them if they're offscreen
+    // p1
+    for (int i = 0; i < bulletsP1.size(); i++) {
+        bulletsP1[i].update();
+        if (bulletsP1[i].yPos < 0) {
+            bulletsP1.erase(bulletsP1.begin()+i); // iterator helps you quickly access memory locations; this points to first slot, and then you just hop over to yours
+        }
+    }
+    
+    // updating bullets and deleting them if they're offscreen
+    for (int i = 0; i < bulletsP2.size(); i++) {
+        bulletsP2[i].update();
+        if (bulletsP2[i].yPos < 0) {
+            bulletsP2.erase(bulletsP2.begin()+i); // iterator helps you quickly access memory locations; this points to first slot, and then you just hop over to yours
+        }
+    }
+}
+
+//--------------------------------------------------------------
+
+void testApp::addBullets() {
+    // this should be where we should be taking our OSC messages and passing them into b.setup() to change stuff.
+    
+    // so let's get our osc messages first.
     while (receiverP1.hasWaitingMessages()) {
-        ofxOscMessage m;
-        receiverP1.getNextMessage(&m);
-        
-        // and now we get the volume from Kampo
-        if (m.getAddress() == "/KAMPO_Mic") {
-            volumeP1=m.getArgAsFloat(1);
+        ofxOscMessage mP1;
+        receiverP1.getNextMessage(&mP1);
+        // and now we get the volume from MAH APP
+        if (mP1.getAddress() == "/volume/max") {
+            volumeP1=mP1.getArgAsFloat(0);
             maxLevelsP1.push_back(volumeP1);
             if (maxLevelsP1.size()>numLevelsToStore) {
                 maxLevelsP1.erase(maxLevelsP1.begin());
             }
+        } else if (mP1.getAddress() == "/fft/levels") {
+            p1MaxLocForFFT = (int)mP1.getArgAsFloat(0); // herp derp this should really be an int, but w/e
         } else {
             // for unrecognized messages. likely not needed but probably useful for debugging
         }
     }
     
     while (receiverP2.hasWaitingMessages()) {
-        ofxOscMessage m;
-        receiverP2.getNextMessage(&m);
-        
+        ofxOscMessage mP2;
+        receiverP2.getNextMessage(&mP2);
         // and now we get the volume from Kampo
-        if (m.getAddress() == "/KAMPO_Mic") {
-            volumeP2=m.getArgAsFloat(1);
+        if (mP2.getAddress() == "/volume/match") {
+            volumeP2=mP2.getArgAsFloat(0);
             maxLevelsP2.push_back(volumeP2);
             if (maxLevelsP2.size()>numLevelsToStore) {
                 maxLevelsP2.erase(maxLevelsP2.begin());
             }
+        } else if (mP2.getAddress() == "/test/levels") {
+            p2MaxLocForFFT = (int)mP2.getArgAsFloat(0); // herp derp this should really be an int, but w/e
         } else {
             // for unrecognized messages. likely not needed but probably useful for debugging
         }
@@ -528,60 +462,62 @@ void testApp::checkIfYelling() {
     }
     maxLevelP2/= (float)maxLevelsP2.size();
     
+    int diffBetweenMaxLoc = abs(p1MaxLocForFFT - p2MaxLocForFFT);
+    // we will probably want to pass that to the bullet and map it onto velocity, size, wiggliness, etc. etc. but for now let's just see if they match at all. remember, we'll probably want to have a vector so we can see if they're sustaining the same frequency over time.
     
+    // and now we'll pass the f out of this s to the bullet setup function.
+ //   if (player1.hasStartedYelling) {
+        if (bulletTimerP1 > bulletTimeP1) {
+            bulletTimerP1 = 0; //resetting the timer
+            Bullet b;
+            b.setup(ofMap(maxLevelP1, 0, .3, 5, 10), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
+            bulletsP1.push_back(b);
+        }
+ //   }
     
-}
-
-//--------------------------------------------------------------
-void testApp::exit() {
-	kinect.setCameraTiltAngle(0); // zero the tilt on exit
-	kinect.close();
-}
-
-//--------------------------------------------------------------
-
-
-void testApp::audioReceived (float * input, int bufferSize, int nChannels){   
-    maxLevel = 0.0f; //reset max to minimum each snd buffer  
-    for (int i = 0; i < bufferSize; i++){  
-        float abs1 = ABS(input[i*2]);   
-        if (maxLevel < abs1) maxLevel = abs1; // grab highest value  
-    }  
+ //   if (player2.hasStartedYelling) {
+        if (bulletTimerP2 > bulletTimeP2) {
+            bulletTimerP2 = 0; //resetting the timer
+            Bullet b;
+            b.setup(ofMap(maxLevelP2, 0, .1, 5, 10), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
+            bulletsP2.push_back(b);
+        }
+ //   }
 }
 
 //--------------------------------------------------------------
 void testApp::keyPressed (int key) {
-	switch (key) {
-		case ' ':
-			bLearnBackground = true;
+    switch (key) {
+        case ' ':
+            bLearnBackground = true;
             //bThreshWithOpenCV = !bThreshWithOpenCV;
-			break;
-			
-		case 'w':
-			kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
-			break;
-			
-		case 'o':
-			kinect.setCameraTiltAngle(angle); // go back to prev tilt
-			kinect.open();
-			break;
-			
-		case 'c':
-			kinect.setCameraTiltAngle(0); // zero the tilt
-			kinect.close();
-			break;
-			
-		case OF_KEY_UP:
-			angle++;
-			if(angle>30) angle=30;
-			kinect.setCameraTiltAngle(angle);
-			break;
-			
-		case OF_KEY_DOWN:
-			angle--;
-			if(angle<-30) angle=-30;
-			kinect.setCameraTiltAngle(angle);
-			break;
+            break;
+            
+        case 'w':
+            kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
+            break;
+            
+        case 'o':
+            kinect.setCameraTiltAngle(angle); // go back to prev tilt
+            kinect.open();
+            break;
+            
+        case 'c':
+            kinect.setCameraTiltAngle(0); // zero the tilt
+            kinect.close();
+            break;
+            
+        case OF_KEY_UP:
+            angle++;
+            if(angle>30) angle=30;
+            kinect.setCameraTiltAngle(angle);
+            break;
+            
+        case OF_KEY_DOWN:
+            angle--;
+            if(angle<-30) angle=-30;
+            kinect.setCameraTiltAngle(angle);
+            break;
             
         case '=':
             threshold++;
@@ -609,7 +545,7 @@ void testApp::keyPressed (int key) {
             grayImageOn = !grayImageOn;
             break;
             
-	}
+    }
 }
 //--------------------------------------------------------------
 void testApp::loadFromText() {
