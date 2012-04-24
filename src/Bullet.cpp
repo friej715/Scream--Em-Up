@@ -38,13 +38,14 @@ void Bullet::draw() {
     
     // let's change the bullet shape based on difference in frequency--more pointy the more different they are
     // is round the best thing to do here? is it different than just casting it as an int?
-    cout << round(ofMap(difference, 0, 150, 0, 3)) << endl;
+    cout << round(ofMap(difference, 0, 50, 0, 3)) << endl;
     
-    if (round(ofMap(difference, 0, 150, 0, 3)) == 0) {
+    // it would be awesome if we could do this as a shape with x# of vertices. if there's time! could also switch between curve and not curve
+    if (ofMap(difference, 0, 50, 0, 3) <= .75) {
         ofEllipse(xPos, yPos, radius, radius);
-    } else if (round(ofMap(difference, 0, 150, 0, 3)) == 1) {
+    } else if (ofMap(difference, 0, 50, 0, 3) > .75 && ofMap(difference, 0, 50, 0, 3) <= 1.5) {
         ofRect(xPos, yPos, radius, radius);
-    } else if (round(ofMap(difference, 0, 150, 0, 3)) == 2) {
-        ofTriangle(xPos - radius, yPos, xPos + radius, yPos, xPos, yPos+radius);
+    } else if (ofMap(difference, 0, 50, 0, 3) > 1.5 && ofMap(difference, 0, 50, 0, 3)) {
+        ofTriangle(xPos - radius, yPos, xPos + radius, yPos, xPos, yPos-radius);
     }
 }

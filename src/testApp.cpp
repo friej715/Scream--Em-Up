@@ -466,23 +466,23 @@ void testApp::addBullets() {
     // we will probably want to pass that to the bullet and map it onto velocity, size, wiggliness, etc. etc. but for now let's just see if they match at all. remember, we'll probably want to have a vector so we can see if they're sustaining the same frequency over time.
     
     // and now we'll pass the f out of this s to the bullet setup function.
- //   if (player1.hasStartedYelling) {
+    if (player1.hasStartedYelling) {
         if (bulletTimerP1 > bulletTimeP1) {
             bulletTimerP1 = 0; //resetting the timer
             Bullet b;
             b.setup(ofMap(maxLevelP1, 0, .3, 5, 10), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
             bulletsP1.push_back(b);
         }
- //   }
+    }
     
- //   if (player2.hasStartedYelling) {
+    if (player2.hasStartedYelling) {
         if (bulletTimerP2 > bulletTimeP2) {
             bulletTimerP2 = 0; //resetting the timer
             Bullet b;
             b.setup(ofMap(maxLevelP2, 0, .1, 5, 10), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
             bulletsP2.push_back(b);
         }
- //   }
+    }
 }
 
 //--------------------------------------------------------------
