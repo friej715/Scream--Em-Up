@@ -32,7 +32,6 @@ void Player::update() {
 }
 
 void Player::draw() {
-    
     ofFill();
     if (isWinning) {
         ofSetColor(ofRandom(255), ofRandom(255), ofRandom(255));
