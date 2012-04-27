@@ -105,12 +105,12 @@ void testApp::update() {
     }
     
     //    use the below code if you just want enemies to pop out whenever (i.e. if you want to test general stuff, not levels)
-    //    if (enemyTimer > enemyTime) {
-    //        enemyTimer = 0;
-    //        Enemy e;
-    //        e.setup(ofRandom(ofGetWidth()), 0);
-    //        enemies.push_back(e);
-    //    }
+    if (enemyTimer > enemyTime) {
+        enemyTimer = 0;
+        Enemy e;
+        e.setup(ofRandom(ofGetWidth()), 0);
+        enemies.push_back(e);
+    }
     
     
     if (gameState == 1) {
@@ -414,11 +414,13 @@ void testApp::addBullets() {
     
     // so let's get our osc messages first.
     while (receiverP1.hasWaitingMessages()) {
+        cout<<"got from 1"<<endl;
         ofxOscMessage mP1;
         receiverP1.getNextMessage(&mP1);
         // and now we get the volume from MAH APP
         if (mP1.getAddress() == "/volume/max") {
             volumeP1=mP1.getArgAsFloat(0);
+            cout << volumeP1 << endl;
             maxLevelsP1.push_back(volumeP1);
             if (maxLevelsP1.size()>numLevelsToStore) {
                 maxLevelsP1.erase(maxLevelsP1.begin());
@@ -431,6 +433,7 @@ void testApp::addBullets() {
     }
     
     while (receiverP2.hasWaitingMessages()) {
+        cout<<"got from 2"<<endl;
         ofxOscMessage mP2;
         receiverP2.getNextMessage(&mP2);
         // and now we get the volume from Kampo
@@ -466,23 +469,23 @@ void testApp::addBullets() {
     // we will probably want to pass that to the bullet and map it onto velocity, size, wiggliness, etc. etc. but for now let's just see if they match at all. remember, we'll probably want to have a vector so we can see if they're sustaining the same frequency over time.
     
     // and now we'll pass the f out of this s to the bullet setup function.
-//    if (player1.hasStartedYelling) {
+    if (player1.hasStartedYelling) {
         if (bulletTimerP1 > bulletTimeP1) {
             bulletTimerP1 = 0; //resetting the timer
             Bullet b;
             b.setup(ofMap(maxLevelP1, 0, .3, 5, 10), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
             bulletsP1.push_back(b);
         }
-//    }
+    }
     
-//    if (player2.hasStartedYelling) {
+    if (player2.hasStartedYelling) {
         if (bulletTimerP2 > bulletTimeP2) {
             bulletTimerP2 = 0; //resetting the timer
             Bullet b;
             b.setup(ofMap(maxLevelP2, 0, .1, 5, 10), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
             bulletsP2.push_back(b);
         }
-//    }
+    }
 }
 
 //--------------------------------------------------------------
