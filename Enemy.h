@@ -8,6 +8,7 @@
 
 #ifndef ofxKinectExample_Enemy_h
 #define ofxKinectExample_Enemy_h
+#include "ofMain.h"
 
 class Enemy {
 public:
@@ -23,10 +24,15 @@ public:
     float dimension; // for noise, in case it's used for randomish movement
     float radian; // related to noise movement?
     
-    void setup(float x, float y);
+    void setup(float x, float y, string s);
     void draw();
     void update();    
     
+    //ofImage enemy1;
+    
+    ofTrueTypeFont enemyFont0;
+
+    ofColor eColor;
 };
 
 

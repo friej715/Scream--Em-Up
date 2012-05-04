@@ -184,6 +184,8 @@
 		30F2B6751415565D00597A7B /* ofxOpenCv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxOpenCv.h; sourceTree = "<group>"; };
 		BB014117152B4F1D003F0AE5 /* Bullet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Bullet.h; sourceTree = "<group>"; };
 		BB014118152B4F27003F0AE5 /* Bullet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Bullet.cpp; sourceTree = "<group>"; };
+		BB15B6E515546D5700394800 /* invaders.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = invaders.ttf; sourceTree = "<group>"; };
+		BB15B6E6155475E500394800 /* player.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = player.png; sourceTree = "<group>"; };
 		BB23CF16152AB37F002B7862 /* Enemy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Enemy.cpp; path = ../Enemy.cpp; sourceTree = "<group>"; };
 		BB23CF18152AB38D002B7862 /* Enemy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Enemy.h; path = ../Enemy.h; sourceTree = "<group>"; };
 		BB440DF615339435008A796C /* install.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; path = install.xml; sourceTree = "<group>"; };
@@ -212,6 +214,7 @@
 		BB440E1515339435008A796C /* ofxOscSender.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxOscSender.cpp; sourceTree = "<group>"; };
 		BB440E1615339435008A796C /* ofxOscSender.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxOscSender.h; sourceTree = "<group>"; };
 		BBAB23BE13894E4700AA2426 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = ../../../libs/glut/lib/osx/GLUT.framework; sourceTree = "<group>"; };
+		BBBBA1D51554661C00ECF18B /* arcade.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = arcade.ttf; sourceTree = "<group>"; };
 		BBFFA004152BCBF700CA15EC /* Player.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Player.h; sourceTree = "<group>"; };
 		BBFFA006152BCC0000CA15EC /* Player.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Player.cpp; sourceTree = "<group>"; };
 		E4328143138ABC890047C5CB /* openFrameworksLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openFrameworksLib.xcodeproj; path = ../../../libs/openFrameworksCompiled/project/osx/openFrameworksLib.xcodeproj; sourceTree = SOURCE_ROOT; };
@@ -738,6 +741,16 @@
 			name = "3rd party frameworks";
 			sourceTree = "<group>";
 		};
+		BBBBA1D41554661300ECF18B /* assets */ = {
+			isa = PBXGroup;
+			children = (
+				BB15B6E6155475E500394800 /* player.png */,
+				BB15B6E515546D5700394800 /* invaders.ttf */,
+				BBBBA1D51554661C00ECF18B /* arcade.ttf */,
+			);
+			name = assets;
+			sourceTree = "<group>";
+		};
 		E4328144138ABC890047C5CB /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -771,6 +784,7 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				BBBBA1D41554661300ECF18B /* assets */,
 				BB440DF515339435008A796C /* ofxOsc */,
 				BB23CF16152AB37F002B7862 /* Enemy.cpp */,
 				BB23CF18152AB38D002B7862 /* Enemy.h */,

@@ -8,6 +8,7 @@
 
 #ifndef ofxKinectExample_Player_h
 #define ofxKinectExample_Player_h
+#include "ofMain.h"
 
 class Player {
 public:
@@ -34,6 +35,7 @@ public:
     
     int numKilled;
     
+    ofTrueTypeFont playerFont;
     
 };
 

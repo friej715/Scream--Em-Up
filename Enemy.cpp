@@ -8,9 +8,8 @@
 
 #include <iostream>
 #include "Enemy.h"
-#include "ofMain.h"
 
-void Enemy::setup(float x, float y) {
+void Enemy::setup(float x, float y, string color) {
     xPos = x;
     yPos = y;
     
@@ -20,17 +19,29 @@ void Enemy::setup(float x, float y) {
     
     dimension = ofRandom(1, 100000);
     radian = 0;
+    
+    enemyFont0.loadFont("invaders.ttf", 30);
+    
+    if (color == "blue") {
+        eColor.setHsb(140, 255, 255, 255);
+    } else if (color == "yellow") {
+        eColor.setHsb(40, 255, 255, 255);
+    } else if (color == "red") {
+        eColor.setHsb(0, 255, 255, 255);
+    }
+    
+    // assets
 }
 
 void Enemy::update() {
     yPos+=ySpeed;    
-    radian+=.05; // may want to lower this--could be faster than people can run/anticipate
-    xPos += 2*sin(radian/2); // using sin for more graceful back and forth movement
+    radian+=.07; // may want to lower this--could be faster than people can run/anticipate
+    xPos += 1.5*sin(radian/2); // using sin for more graceful back and forth movement
     
 }
 
 void Enemy::draw() {
+    ofSetColor(eColor);
     ofFill();
-    ofSetColor(0, 206, ofRandom(160, 240));
-    ofRect(xPos, yPos, 30, 30);
+    enemyFont0.drawString("B", xPos, yPos);
 }

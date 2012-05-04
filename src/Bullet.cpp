@@ -51,7 +51,7 @@ void Bullet::draw() {
 //    cout << round(ofMap(difference, 0, 50, 0, 3)) << endl;
     
     // it would be awesome if we could do this as a shape with x# of vertices. if there's time! could also switch between curve and not curve
-    if (ofMap(difference, 0, 50, 0, 3) <= 1) {
+    if (ofMap(difference, 0, 30, 0, 3) <= 1) {
         ofEllipse(xPos, yPos, radius, radius);
     } else if (ofMap(difference, 0, 50, 0, 3) > 1 && ofMap(difference, 0, 50, 0, 3) <= 2) {
         ofRect(xPos, yPos, radius, radius);

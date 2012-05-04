@@ -83,6 +83,7 @@ public:
     vector<float> enemyXPos;
     vector<float> enemyYPos;
     vector<float> enemyTimeSpawn;
+    vector<string> enemyColors;
     
     void loadFromText();
     
@@ -130,4 +131,10 @@ public:
     
     // gamestates, ughhhhh
     int gameState;
+    
+    // fonts
+    ofTrueTypeFont titleFont;
+    ofTrueTypeFont scoreFont;
+    
+    
 };

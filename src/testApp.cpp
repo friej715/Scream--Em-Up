@@ -2,17 +2,17 @@
 
 /*
  to-do:
- - on/off the ellipse
- 
- ** map to keyboard the threshold for imaging (how different something has to be from the bg image; higher means a lot)
- ** map mic sensitivity to keyboard
- ** make it easier to switch between mic and osc
+ - add more levels/enemy stuff
+ - fix pc
  
  */
 
 
 //--------------------------------------------------------------
 void testApp::setup() {
+    
+    titleFont.loadFont("arcade.ttf", 72);
+    scoreFont.loadFont("arcade.ttf", 30);
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	
 	// enable depth->video image calibration
@@ -56,7 +56,7 @@ void testApp::setup() {
     
     numLevelsToStore = 50;
     
-    micSensitivity = .15;
+    micSensitivity = .2;
     
     inputBufferCopy = new float[512*2];
     
@@ -66,8 +66,8 @@ void testApp::setup() {
     maxShake = 20;
     
     // OSC port stuff--will need 2 for 2 players, duh
-    receiverP1.setup(8000);
-    receiverP2.setup(8001);
+    receiverP1.setup(8001);
+    receiverP2.setup(8002);
     
     grayImageOn = true;
     
@@ -82,6 +82,10 @@ void testApp::setup() {
     
     enemyTimer = 0;
     enemyTime = 30;
+
+    ofEnableAlphaBlending();
+    
+    
 }
 
 //--------------------------------------------------------------
@@ -105,12 +109,12 @@ void testApp::update() {
     }
     
     //    use the below code if you just want enemies to pop out whenever (i.e. if you want to test general stuff, not levels)
-    if (enemyTimer > enemyTime) {
-        enemyTimer = 0;
-        Enemy e;
-        e.setup(ofRandom(ofGetWidth()), 0);
-        enemies.push_back(e);
-    }
+//    if (enemyTimer > enemyTime) {
+//        enemyTimer = 0;
+//        Enemy e;
+//        e.setup(ofRandom(ofGetWidth()), 0);
+//        enemies.push_back(e);
+//    }
     
     
     if (gameState == 1) {
@@ -118,12 +122,13 @@ void testApp::update() {
             if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
                 // spawn new enemy
                 Enemy e;
-                e.setup(enemyXPos[0], enemyYPos[0]);
+                e.setup(enemyXPos[0], enemyYPos[0], enemyColors[0]);
                 enemies.push_back(e);
                 // delete from vector
                 enemyXPos.erase(enemyXPos.begin());
                 enemyYPos.erase(enemyYPos.begin());
                 enemyTimeSpawn.erase(enemyTimeSpawn.begin());
+                enemyColors.erase(enemyColors.begin());
             }
         }
         
@@ -151,12 +156,12 @@ void testApp::update() {
             
             // find contours which are between the size of 20 pixels and 1/3 the w*h pixels.
             // also, find holes is set to true so we will get interior contours as well....
-            contourFinder.findContours(grayDiff, 10, (kinect.width*kinect.height)/2, 1, false);
+            contourFinder.findContours(grayDiff, 10, (kinect.width*kinect.height)/2, 2, false);
             
         }
         
         addBullets(); // adding bullets when yelling; moved to a function because unlikely to change much in this context
-        checkBullets(); // checking bullets; moved to a function because we won't really change it often
+//        checkBullets(); // checking bullets; moved to a function because we won't really change it often
         
         // update our enemies
         for (int i = 0; i < enemies.size(); i++) {
@@ -265,6 +270,7 @@ void testApp::draw() {
     }
     
     if (gameState == 1) {
+        
         //    ofBackground(255, 192, 203);
         float shake = 0;
         if (maxLevelP1 > shakeSensitivity) {
@@ -283,17 +289,21 @@ void testApp::draw() {
         }
         
         //game stuff! 
+        checkBullets(); // checking bullets; moved to a function because we won't really change it often
+
         
         // let's print the ratio of enemies shot to total enemies on screen.
-        ofDrawBitmapString("Player 1: " + ofToString(player1.numKilled), ofGetWidth()/4, 50);
-        ofDrawBitmapString("Player 2: " + ofToString(player2.numKilled), ofGetWidth()*.75, 50);
+        scoreFont.drawString("Player 1: " + ofToString(player1.numKilled), 70, 50);
+        scoreFont.drawString("Player 2: " + ofToString(player2.numKilled), ofGetWidth()/2+70, 50);
         
         if (player1.isWinning) {
             ofDrawBitmapString("Player 1 is louder!", ofGetWidth()/(ofRandom(1.98,2)), 100);
+           // player1.numKilled+=1;
         }
         
         if (player2.isWinning) {
             ofDrawBitmapString("Player 2 is louder!", ofGetWidth()/(ofRandom(1.98,2)), 100);
+           // player2.numKilled+=2;
         }
         
         player1.draw();
@@ -312,6 +322,7 @@ void testApp::draw() {
         }
         ofPopMatrix();
     }
+    
 }
 
 //--------------------------------------------------------------
@@ -373,7 +384,16 @@ void testApp::checkBullets() {
             if (ofDist(enemies[i].xPos, enemies[i].yPos, bulletsP1[k].xPos, bulletsP1[k].yPos) < 30) {
                 enemies.erase(enemies.begin()+i);
                 bulletsP1.erase(bulletsP1.begin()+i);
-                player1.numKilled++;
+                
+                if (abs(bulletsP1[k].color.getHue() - enemies[i].eColor.getHue()) < 30) {
+                    ofSetColor(255);
+                    titleFont.drawString("COLOR BONUS!!!1", 70, ofGetHeight()/2);
+                    cout << "bonussssss" << endl;
+                    player1.numKilled+=5;
+                } else {
+                    player1.numKilled++;
+                }
+                
             }
         }
     }
@@ -385,6 +405,15 @@ void testApp::checkBullets() {
                 enemies.erase(enemies.begin()+i);
                 bulletsP2.erase(bulletsP2.begin()+i);
                 player2.numKilled++;
+                
+                if (abs(bulletsP2[k].color.getHue() - enemies[i].eColor.getHue()) < 30) {
+                    ofSetColor(255);
+                    titleFont.drawString("COLOR BONUS!!!1", ofGetHeight()+70, ofGetHeight()/2);
+                    cout << "bonussssss" << endl;
+                    player2.numKilled+=5;
+                } else {
+                    player2.numKilled++;
+                }
             }
         }
     }
@@ -436,14 +465,14 @@ void testApp::addBullets() {
         cout<<"got from 2"<<endl;
         ofxOscMessage mP2;
         receiverP2.getNextMessage(&mP2);
-        // and now we get the volume from Kampo
-        if (mP2.getAddress() == "/volume/match") {
+        // and now we get the volume from the app
+        if (mP2.getAddress() == "/volume/max") {
             volumeP2=mP2.getArgAsFloat(0);
             maxLevelsP2.push_back(volumeP2);
             if (maxLevelsP2.size()>numLevelsToStore) {
                 maxLevelsP2.erase(maxLevelsP2.begin());
             }
-        } else if (mP2.getAddress() == "/test/levels") {
+        } else if (mP2.getAddress() == "/fft/levels") {
             p2MaxLocForFFT = (int)mP2.getArgAsFloat(0); // herp derp this should really be an int, but w/e
         } else {
             // for unrecognized messages. likely not needed but probably useful for debugging
@@ -482,7 +511,7 @@ void testApp::addBullets() {
         if (bulletTimerP2 > bulletTimeP2) {
             bulletTimerP2 = 0; //resetting the timer
             Bullet b;
-            b.setup(ofMap(maxLevelP2, 0, .1, 5, 10), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
+            b.setup(ofMap(maxLevelP2, 0, .3, 5, 10), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
             bulletsP2.push_back(b);
         }
     }
@@ -570,7 +599,7 @@ void testApp::loadFromText() {
         enemyLines.push_back(textFromLine);
     }
     
-    for (int i = 0; i < enemyLines.size(); i+=4) {
+    for (int i = 0; i < enemyLines.size(); i+=5) {
         int newX = atoi(enemyLines[i].c_str());
         enemyXPos.push_back(newX);
         
@@ -580,6 +609,11 @@ void testApp::loadFromText() {
         int newTime = atoi(enemyLines[i+2].c_str());
         enemyTimeSpawn.push_back(newTime);
         cout<<"this foe time: "<<newTime<<endl;
+        
+        string newColor = enemyLines[i+3];
+        enemyColors.push_back(newColor);
+        cout << newColor << endl;
+        
     }
     
     cout<<"done loading"<<endl;

@@ -7,7 +7,6 @@
 //
 
 #include <iostream>
-#include "ofMain.h"
 #include "Player.h"
 
 void Player::setup() {
@@ -25,6 +24,9 @@ void Player::setup() {
     isWinning = false;
     
     numKilled = 0;
+    
+    playerFont.loadFont("arcade.ttf", 30);
+    
 }
 
 void Player::update() {
@@ -36,9 +38,14 @@ void Player::draw() {
     if (isWinning) {
         ofSetColor(ofRandom(255), ofRandom(255), ofRandom(255));
     } else {
-    ofSetColor(199, 21, 133);
+    ofSetColor(0, 255, 255);
     }
-    ofRect(xPos, ofGetHeight()-20, 60, 20);
+    ofRect(xPos - 40, ofGetHeight()-20, 80, 30);
+    ofRect(xPos - 30, ofGetHeight()-30, 60, 40);
+    ofRect(xPos - 10, ofGetHeight()-40, 20, 30);
+    ofRect(xPos - 5, ofGetHeight()-50, 10, 20);
+    //playerFont.drawString("W", xPos, yPos-20);
+   // ofRect(xPos, ofGetHeight()-20, 60, 20);
 }
 
 void Player::shoot() {
