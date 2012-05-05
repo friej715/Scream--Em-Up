@@ -6,6 +6,7 @@
 #include "Enemy.h"
 #include "Bullet.h"
 #include "Player.h"
+#include "Boss.h"
 #include "ofxOsc.h"
 
 // now we set the ports for our OSC messages
@@ -135,6 +136,11 @@ public:
     // fonts
     ofTrueTypeFont titleFont;
     ofTrueTypeFont scoreFont;
+    
+    // background stars
+    vector<ofVec2f> regularStars;
+    
+    Boss boss;
     
     
 };

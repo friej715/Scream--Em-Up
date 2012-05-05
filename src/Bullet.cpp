@@ -14,7 +14,7 @@ void Bullet::setup(float r, int f, int d, float x) {
     
     // now, the question is, do we also want to pass the original value so each players bullets have a hint of the original frequency? you know? like, so the player's bullets also at least partially reflect their sounds. the answer is probably.
     
-    xPos = x + 30; // dumb move to center bullets... should be temp
+    xPos = x; // dumb move to center bullets... should be temp
     yPos = ofGetHeight();
     
     yVelocity = 25;

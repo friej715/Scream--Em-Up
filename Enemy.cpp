@@ -36,7 +36,7 @@ void Enemy::setup(float x, float y, string color) {
 void Enemy::update() {
     yPos+=ySpeed;    
     radian+=.07; // may want to lower this--could be faster than people can run/anticipate
-    xPos += 1.5*sin(radian/2); // using sin for more graceful back and forth movement
+    xPos += sin(radian/2); // using sin for more graceful back and forth movement
     
 }
 

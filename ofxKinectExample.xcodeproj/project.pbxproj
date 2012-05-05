@@ -29,6 +29,7 @@
 		BB440E1915339435008A796C /* ofxOscMessage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BB440E1115339435008A796C /* ofxOscMessage.cpp */; };
 		BB440E1A15339435008A796C /* ofxOscReceiver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BB440E1315339435008A796C /* ofxOscReceiver.cpp */; };
 		BB440E1B15339435008A796C /* ofxOscSender.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BB440E1515339435008A796C /* ofxOscSender.cpp */; };
+		BB93BE581554BF3000FEE50A /* Boss.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BB93BE571554BF3000FEE50A /* Boss.cpp */; };
 		BBAB23CB13894F3D00AA2426 /* GLUT.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = BBAB23BE13894E4700AA2426 /* GLUT.framework */; };
 		BBFFA007152BCC0000CA15EC /* Player.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BBFFA006152BCC0000CA15EC /* Player.cpp */; };
 		E4328149138ABC9F0047C5CB /* openFrameworksDebug.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E4328148138ABC890047C5CB /* openFrameworksDebug.a */; };
@@ -213,6 +214,8 @@
 		BB440E1415339435008A796C /* ofxOscReceiver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxOscReceiver.h; sourceTree = "<group>"; };
 		BB440E1515339435008A796C /* ofxOscSender.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxOscSender.cpp; sourceTree = "<group>"; };
 		BB440E1615339435008A796C /* ofxOscSender.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxOscSender.h; sourceTree = "<group>"; };
+		BB93BE571554BF3000FEE50A /* Boss.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Boss.cpp; sourceTree = "<group>"; };
+		BB93BE591554BF3900FEE50A /* Boss.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Boss.h; sourceTree = "<group>"; };
 		BBAB23BE13894E4700AA2426 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = ../../../libs/glut/lib/osx/GLUT.framework; sourceTree = "<group>"; };
 		BBBBA1D51554661C00ECF18B /* arcade.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = arcade.ttf; sourceTree = "<group>"; };
 		BBFFA004152BCBF700CA15EC /* Player.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Player.h; sourceTree = "<group>"; };
@@ -790,6 +793,8 @@
 				BB23CF18152AB38D002B7862 /* Enemy.h */,
 				BBFFA004152BCBF700CA15EC /* Player.h */,
 				BBFFA006152BCC0000CA15EC /* Player.cpp */,
+				BB93BE571554BF3000FEE50A /* Boss.cpp */,
+				BB93BE591554BF3900FEE50A /* Boss.h */,
 				BB014117152B4F1D003F0AE5 /* Bullet.h */,
 				BB014118152B4F27003F0AE5 /* Bullet.cpp */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
@@ -917,6 +922,7 @@
 				BB440E1915339435008A796C /* ofxOscMessage.cpp in Sources */,
 				BB440E1A15339435008A796C /* ofxOscReceiver.cpp in Sources */,
 				BB440E1B15339435008A796C /* ofxOscSender.cpp in Sources */,
+				BB93BE581554BF3000FEE50A /* Boss.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

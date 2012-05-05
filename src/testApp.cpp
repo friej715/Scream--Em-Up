@@ -3,7 +3,6 @@
 /*
  to-do:
  - add more levels/enemy stuff
- - fix pc
  
  */
 
@@ -56,14 +55,15 @@ void testApp::setup() {
     
     numLevelsToStore = 50;
     
-    micSensitivity = .2;
+//    micSensitivity = .2;
+    micSensitivity = .8;
     
     inputBufferCopy = new float[512*2];
     
     oldYell.push_back(0.0f);
     
     shakeSensitivity = micSensitivity*1.2;
-    maxShake = 20;
+    maxShake = 5;
     
     // OSC port stuff--will need 2 for 2 players, duh
     receiverP1.setup(8001);
@@ -74,18 +74,24 @@ void testApp::setup() {
     // calling text file for waves of enemies
     loadFromText();
     
-    gameStartTime = ofGetElapsedTimeMillis();
-    
     // gamestate
-    gameState = 1;
+    gameState = 0;
     
     
     enemyTimer = 0;
-    enemyTime = 30;
+//    enemyTime = 30;
+    enemyTime = 15;
 
     ofEnableAlphaBlending();
+
+    for (int i = 0; i < 30; i++) {
+        ofVec2f s;
+        s.x = ofRandom(ofGetWidth());
+        s.y = ofRandom(ofGetHeight());
+        regularStars.push_back(s);
+    }
     
-    
+    boss.setup();
 }
 
 //--------------------------------------------------------------
@@ -98,14 +104,15 @@ void testApp::update() {
     
     
     checkIfYelling(); // ALWAYS want to check if yelling. it's how we control anything, including starting, restarting, etc.
+    compareYells();
     
     
     // ----- titlescreen -----
     if (gameState == 0) {
-        // cout << (maxLevel/micSensitivity)*100 << endl;
-        if ((maxLevelP1 > micSensitivity && maxLevelP2 > micSensitivity) || maxLevel > micSensitivity) {
+        if (maxLevelP1 > micSensitivity || maxLevelP2 > micSensitivity) {
             gameState = 1;
         }
+        addBullets();
     }
     
     //    use the below code if you just want enemies to pop out whenever (i.e. if you want to test general stuff, not levels)
@@ -118,6 +125,8 @@ void testApp::update() {
     
     
     if (gameState == 1) {
+        gameStartTime = ofGetElapsedTimeMillis();
+        
         if (enemyTimeSpawn.size()>0){
             if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
                 // spawn new enemy
@@ -189,6 +198,15 @@ void testApp::update() {
         if (player2.hasStartedYelling == true) {
             newYellP2.push_back(volumeP2);
         }
+        
+        // the number here will change (and maybe there's a cleverer way to do this), but in any case, here's when we can trigger the BAWSS
+        if (ofGetElapsedTimeMillis() > 36000) {
+            boss.bossOnScreen = true;
+        }
+        
+        if (boss.bossOnScreen == true) {
+            boss.update();
+        }
     }
 }
 
@@ -254,19 +272,33 @@ bool testApp::compareYells() {
 void testApp::draw() {
     // ----- titlescreen -----
     if (gameState == 0) {
-        // obvs change this to the osc messages
         
+        
+        
+        ofBackground(0);
         float shake = 0;
-        shake = ofMap(maxLevel, 0, .1, 0, 15);
-//        cout << shake << endl;
+        shake = ofMap(maxLevelP1 + maxLevelP2, 0, .6, 0, 10);
         
         ofPushMatrix();
-        ofTranslate(ofRandom(shake), ofRandom(shake));
-        ofDrawBitmapString("YOU MUST BE THIS FUCKING LOUD\nTO PLAY THIS GAME", ofGetWidth()/2.0, ofGetHeight()/2.0);
-        ofLine(0, ofGetHeight() - 500, ofGetWidth(), ofGetHeight()-500);
-        ofRect(ofGetWidth()/4.0, ofGetHeight(), 50, -ofMap(maxLevel, 0, .1, 0, 500));
-        ofRect(ofGetWidth()*.75, ofGetHeight(), 50, -ofMap(maxLevel, 0, .1, 0, 500));
+        //ofTranslate(ofRandom(shake), ofRandom(shake));
+        
+        ofColor c;
+        c.setHsb(ofRandom(255), 255, 255, 255);
+        ofSetColor(c);
+        titleFont.drawString("SCREAM 'EM UP!1", 0, 100);
+        
+        ofSetColor(255);
+        scoreFont.drawString("YOU MUST BE THIS LOUD\n   TO PLAY THIS GAME", 200, 150);
+        
+        ofSetColor(c);
+        ofSetLineWidth(5);
+        ofLine(0, 160, ofGetWidth(), 160);
+        
+        ofRect(ofGetWidth()/4.0, ofGetHeight(), 50, -ofMap(maxLevelP1, 0, micSensitivity, 0, ofGetHeight()-160));
+        ofRect(ofGetWidth()*.75, ofGetHeight(), 50, -ofMap(maxLevelP2, 0, micSensitivity, 0, ofGetHeight()-160));
+        
         ofPopMatrix();
+        
     }
     
     if (gameState == 1) {
@@ -288,23 +320,32 @@ void testApp::draw() {
             grayDiff.draw(0, 0, grayDiff.width*gameScale, grayDiff.height*gameScale);
         }
         
+        if (enemyTimer > enemyTime) {
+            enemyTimer = 0;
+            ofVec2f s;
+            s.x = ofRandom(ofGetWidth());
+            s.y = 0;
+            regularStars.push_back(s);
+        }
+        
+        for (int i = 0; i < regularStars.size(); i++) {
+            regularStars[i].y+=2;
+            ofSetColor(255);
+            ofRect(regularStars[i].x, regularStars[i].y, 2, 2);
+        }
+        
         //game stuff! 
         checkBullets(); // checking bullets; moved to a function because we won't really change it often
-
         
-        // let's print the ratio of enemies shot to total enemies on screen.
-        scoreFont.drawString("Player 1: " + ofToString(player1.numKilled), 70, 50);
-        scoreFont.drawString("Player 2: " + ofToString(player2.numKilled), ofGetWidth()/2+70, 50);
-        
-        if (player1.isWinning) {
-            ofDrawBitmapString("Player 1 is louder!", ofGetWidth()/(ofRandom(1.98,2)), 100);
-           // player1.numKilled+=1;
-        }
-        
-        if (player2.isWinning) {
-            ofDrawBitmapString("Player 2 is louder!", ofGetWidth()/(ofRandom(1.98,2)), 100);
-           // player2.numKilled+=2;
-        }
+//        if (player1.isWinning) {
+//            ofDrawBitmapString("Player 1 is louder!", ofGetWidth()/(ofRandom(1.98,2)), 100);
+//           // player1.numKilled+=1;
+//        }
+//        
+//        if (player2.isWinning) {
+//            ofDrawBitmapString("Player 2 is louder!", ofGetWidth()/(ofRandom(1.98,2)), 100);
+//           // player2.numKilled+=2;
+//        }
         
         player1.draw();
         player2.draw();
@@ -320,9 +361,36 @@ void testApp::draw() {
         for (int i = 0; i < enemies.size(); i++) {
             enemies[i].draw();
         }
+        
+        if (boss.bossOnScreen == true) {
+            boss.draw();
+        }
+        
+        // let's print the ratio of enemies shot to total enemies on screen.
+        ofSetColor(255);
+        scoreFont.drawString("Player 1: " + ofToString(player1.numKilled), 70, 50);
+        scoreFont.drawString("Player 2: " + ofToString(player2.numKilled), ofGetWidth()/2+70, 50);
+        
         ofPopMatrix();
+        
+        if (boss.health < 0 || boss.yPos >= ofGetHeight()) {
+            gameState = 3;
+        }
     }
     
+    if (gameState == 3) {
+        if (boss.health < 0) {
+            titleFont.drawString("PWNED!!!1", ofGetWidth()/3, ofGetHeight()/2);
+        } else {
+            titleFont.drawString("BOSS\nESCAPED", ofGetWidth()/3, ofGetHeight()/2);
+        }
+        
+        if (player1.numKilled > player2.numKilled) {
+            scoreFont.drawString("PLAYER 1 WINS!!1~", ofGetWidth()/3, 500);
+        } else {
+            scoreFont.drawString("PLAYER 2 WINS!!1~", ofGetWidth()/3, 500);   
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -389,9 +457,9 @@ void testApp::checkBullets() {
                     ofSetColor(255);
                     titleFont.drawString("COLOR BONUS!!!1", 70, ofGetHeight()/2);
                     cout << "bonussssss" << endl;
-                    player1.numKilled+=5;
+                    player1.numKilled+=150;
                 } else {
-                    player1.numKilled++;
+                    player1.numKilled+=50;
                 }
                 
             }
@@ -432,6 +500,24 @@ void testApp::checkBullets() {
         bulletsP2[i].update();
         if (bulletsP2[i].yPos < 0) {
             bulletsP2.erase(bulletsP2.begin()+i); // iterator helps you quickly access memory locations; this points to first slot, and then you just hop over to yours
+        }
+    }
+    
+    if (boss.bossOnScreen == true && boss.shieldsUp == false) {
+        for (int i = 0; i < bulletsP1.size(); i++) {
+            if (ofDist(bulletsP1[i].xPos, bulletsP1[i].yPos, boss.xPos, boss.yPos) < 30) {
+                boss.health--;
+                player1.numKilled+=200;
+                bulletsP2.erase(bulletsP2.begin()+i);
+            }
+        }
+        
+        for (int i = 0; i < bulletsP2.size(); i++) {
+            if (ofDist(bulletsP2[i].xPos, bulletsP2[i].yPos, boss.xPos, boss.yPos) < 30) {
+                boss.health--;
+                player2.numKilled+=200;
+                bulletsP2.erase(bulletsP2.begin()+i);
+            }
         }
     }
 }
@@ -497,22 +583,24 @@ void testApp::addBullets() {
     int diffBetweenMaxLoc = abs(p1MaxLocForFFT - p2MaxLocForFFT);
     // we will probably want to pass that to the bullet and map it onto velocity, size, wiggliness, etc. etc. but for now let's just see if they match at all. remember, we'll probably want to have a vector so we can see if they're sustaining the same frequency over time.
     
-    // and now we'll pass the f out of this s to the bullet setup function.
-    if (player1.hasStartedYelling) {
-        if (bulletTimerP1 > bulletTimeP1) {
-            bulletTimerP1 = 0; //resetting the timer
-            Bullet b;
-            b.setup(ofMap(maxLevelP1, 0, .3, 5, 10), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
-            bulletsP1.push_back(b);
+    if (gameState == 1) {
+        // and now we'll pass the f out of this s to the bullet setup function.
+        if (player1.hasStartedYelling) {
+            if (bulletTimerP1 > bulletTimeP1) {
+                bulletTimerP1 = 0; //resetting the timer
+                Bullet b;
+                b.setup(ofMap(maxLevelP1, 0, .9, 5, 10), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
+                bulletsP1.push_back(b);
+            }
         }
-    }
-    
-    if (player2.hasStartedYelling) {
-        if (bulletTimerP2 > bulletTimeP2) {
-            bulletTimerP2 = 0; //resetting the timer
-            Bullet b;
-            b.setup(ofMap(maxLevelP2, 0, .3, 5, 10), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
-            bulletsP2.push_back(b);
+        
+        if (player2.hasStartedYelling) {
+            if (bulletTimerP2 > bulletTimeP2) {
+                bulletTimerP2 = 0; //resetting the timer
+                Bullet b;
+                b.setup(ofMap(maxLevelP2, 0, .9, 5, 10), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
+                bulletsP2.push_back(b);
+            }
         }
     }
 }
