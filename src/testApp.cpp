@@ -66,8 +66,8 @@ void testApp::setup() {
     maxShake = 5;
     
     // OSC port stuff--will need 2 for 2 players, duh
-    receiverP1.setup(8001);
-    receiverP2.setup(8002);
+    receiverP1.setup(8012);
+    receiverP2.setup(8013);
     
     grayImageOn = true;
     
@@ -92,6 +92,7 @@ void testApp::setup() {
     }
     
     boss.setup();
+    gameStartTime = ofGetElapsedTimeMillis();
 }
 
 //--------------------------------------------------------------
@@ -111,6 +112,7 @@ void testApp::update() {
     if (gameState == 0) {
         if (maxLevelP1 > micSensitivity || maxLevelP2 > micSensitivity) {
             gameState = 1;
+            gameStartTime = ofGetElapsedTimeMillis();
         }
         addBullets();
     }
@@ -125,12 +127,12 @@ void testApp::update() {
     
     
     if (gameState == 1) {
-        gameStartTime = ofGetElapsedTimeMillis();
         
         if (enemyTimeSpawn.size()>0){
             if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
                 // spawn new enemy
                 Enemy e;
+                cout << "spawn" << endl;
                 e.setup(enemyXPos[0], enemyYPos[0], enemyColors[0]);
                 enemies.push_back(e);
                 // delete from vector
@@ -303,7 +305,7 @@ void testApp::draw() {
     
     if (gameState == 1) {
         
-        //    ofBackground(255, 192, 203);
+        ofBackground(0);
         float shake = 0;
         if (maxLevelP1 > shakeSensitivity) {
             shake = ofMap(maxLevelP1, shakeSensitivity, .5, 0, maxShake); 
@@ -388,7 +390,7 @@ void testApp::draw() {
         if (player1.numKilled > player2.numKilled) {
             scoreFont.drawString("PLAYER 1 WINS!!1~", ofGetWidth()/3, 500);
         } else {
-            scoreFont.drawString("PLAYER 2 WINS!!1~", ofGetWidth()/3, 500);   
+            scoreFont.drawString("PLAYER 2 WINS!!1~", ofGetWidth()/3, 600);   
         }
     }
 }
