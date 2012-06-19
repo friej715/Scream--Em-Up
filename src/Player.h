@@ -27,6 +27,8 @@ public:
     bool hasStartedYelling;
     bool isShooting;
     bool isWinning;
+    bool isMovingLeft;
+    bool isMovingRight;
     
     void setup();
     void update();

@@ -30,7 +30,14 @@ void Player::setup() {
 }
 
 void Player::update() {
-
+    if (isMovingLeft) {
+        xPos-=3;
+    }
+    
+    if (isMovingRight) {
+        xPos+=3;
+    }
+    
 }
 
 void Player::draw() {

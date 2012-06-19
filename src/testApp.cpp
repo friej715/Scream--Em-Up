@@ -2,8 +2,6 @@
 
 /*
  to-do:
- - add more levels/enemy stuff
- 
  */
 
 
@@ -33,6 +31,10 @@ void testApp::setup() {
 	angle = 0;
 	kinect.setCameraTiltAngle(angle);
     
+    // OSC port stuff--will need 2 for 2 players, duh
+    receiverP1.setup(8014);
+    receiverP2.setup(8015);
+    
     bLearnBackground = true;
     
     // threshold for more accurate blob detection
@@ -41,58 +43,62 @@ void testApp::setup() {
     //setting up the audio
     ofSoundStreamSetup(0, 2, this, 44100, 256, 4);
     
-    //game stuff!----------------------
+//    //game stuff!----------------------
+//    
+//    bulletTimerP1 = 0;
+//    bulletTimeP1 = 2; //frames
+//    
+//    bulletTimerP2 = 0;
+//    bulletTimeP2 = 2; //frames
+//    
+//    enemiesShot = 0;
+//    
+//    gameScale = ofGetScreenWidth()/kinect.width;
+//    
+//    numLevelsToStore = 50;
+//    
+////    micSensitivity = .2;
+//    micSensitivity = .8;
+//    
+//    inputBufferCopy = new float[512*2];
+//    
+//    oldYell.push_back(0.0f);
+//    
+//    shakeSensitivity = micSensitivity*1.2;
+//    maxShake = 5;
+//    
+//    grayImageOn = true;
+//    
+//    // calling text file for waves of enemies
+//    loadFromText();
+//    
+//    // gamestate
+//    gameState = 0;
+//    
+//    
+//    enemyTimer = 0;
+////    enemyTime = 30;
+//    enemyTime = 15;
+//
+//    ofEnableAlphaBlending();
+//
+//    for (int i = 0; i < 30; i++) {
+//        ofVec2f s;
+//        s.x = ofRandom(ofGetWidth());
+//        s.y = ofRandom(ofGetHeight());
+//        regularStars.push_back(s);
+//    }
+//    
+//    boss.setup();
+//    gameStartTime = ofGetElapsedTimeMillis();
     
-    bulletTimerP1 = 0;
-    bulletTimeP1 = 2; //frames
+    isUsingKeyboard = false;
+    reset();
     
-    bulletTimerP2 = 0;
-    bulletTimeP2 = 2; //frames
+   gameState = 0;
     
-    enemiesShot = 0;
-    
-    gameScale = ofGetScreenWidth()/kinect.width;
-    
-    numLevelsToStore = 50;
-    
-//    micSensitivity = .2;
-    micSensitivity = .8;
-    
-    inputBufferCopy = new float[512*2];
-    
-    oldYell.push_back(0.0f);
-    
-    shakeSensitivity = micSensitivity*1.2;
-    maxShake = 5;
-    
-    // OSC port stuff--will need 2 for 2 players, duh
-    receiverP1.setup(8012);
-    receiverP2.setup(8013);
-    
-    grayImageOn = true;
-    
-    // calling text file for waves of enemies
-    loadFromText();
-    
-    // gamestate
-    gameState = 0;
-    
-    
-    enemyTimer = 0;
-//    enemyTime = 30;
-    enemyTime = 15;
-
-    ofEnableAlphaBlending();
-
-    for (int i = 0; i < 30; i++) {
-        ofVec2f s;
-        s.x = ofRandom(ofGetWidth());
-        s.y = ofRandom(ofGetHeight());
-        regularStars.push_back(s);
-    }
-    
-    boss.setup();
-    gameStartTime = ofGetElapsedTimeMillis();
+    cout << boss.font.stringWidth("F") << endl;
+    cout << boss.font.stringHeight("F") << endl;
 }
 
 //--------------------------------------------------------------
@@ -106,6 +112,7 @@ void testApp::update() {
     
     checkIfYelling(); // ALWAYS want to check if yelling. it's how we control anything, including starting, restarting, etc.
     compareYells();
+
     
     
     // ----- titlescreen -----
@@ -179,6 +186,11 @@ void testApp::update() {
             enemies[i].update();
         }
         
+        player1.update();
+        player2.update();
+        
+        
+        if (isUsingKeyboard == false) {
         // different settings for different blobs "found." really how many blobs are found is set by the blobfinder itself (1, 2)
         if (contourFinder.nBlobs == 2) {
             player1.xPos = contourFinder.blobs[0].centroid.x * gameScale;
@@ -191,6 +203,7 @@ void testApp::update() {
             player1.xPos = 50;
             player2.xPos = 500;
         }
+        }
         
         // filling up the yells with the various volumes
         if (player1.hasStartedYelling == true) { //player is currently yelling.
@@ -202,7 +215,7 @@ void testApp::update() {
         }
         
         // the number here will change (and maybe there's a cleverer way to do this), but in any case, here's when we can trigger the BAWSS
-        if (ofGetElapsedTimeMillis() > 36000) {
+        if (ofGetElapsedTimeMillis() > 36000 + gameStartTime) {
             boss.bossOnScreen = true;
         }
         
@@ -305,6 +318,8 @@ void testApp::draw() {
     
     if (gameState == 1) {
         
+        grayImageOn;
+        
         ofBackground(0);
         float shake = 0;
         if (maxLevelP1 > shakeSensitivity) {
@@ -381,7 +396,7 @@ void testApp::draw() {
     }
     
     if (gameState == 3) {
-        if (boss.health < 0) {
+        if (boss.health <= 0) {
             titleFont.drawString("PWNED!!!1", ofGetWidth()/3, ofGetHeight()/2);
         } else {
             titleFont.drawString("BOSS\nESCAPED", ofGetWidth()/3, ofGetHeight()/2);
@@ -507,10 +522,10 @@ void testApp::checkBullets() {
     
     if (boss.bossOnScreen == true && boss.shieldsUp == false) {
         for (int i = 0; i < bulletsP1.size(); i++) {
-            if (ofDist(bulletsP1[i].xPos, bulletsP1[i].yPos, boss.xPos, boss.yPos) < 30) {
-                boss.health--;
+            if (ofDist(bulletsP1[i].xPos, bulletsP1[i].yPos, boss.xPos + 170, boss.yPos - 113) < 170) {
+                boss.health-=2;
                 player1.numKilled+=200;
-                bulletsP2.erase(bulletsP2.begin()+i);
+                bulletsP1.erase(bulletsP1.begin()+i);
             }
         }
         
@@ -591,7 +606,7 @@ void testApp::addBullets() {
             if (bulletTimerP1 > bulletTimeP1) {
                 bulletTimerP1 = 0; //resetting the timer
                 Bullet b;
-                b.setup(ofMap(maxLevelP1, 0, .9, 5, 10), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
+                b.setup(ofMap(maxLevelP1, 0, .9, 5, 15), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
                 bulletsP1.push_back(b);
             }
         }
@@ -600,7 +615,7 @@ void testApp::addBullets() {
             if (bulletTimerP2 > bulletTimeP2) {
                 bulletTimerP2 = 0; //resetting the timer
                 Bullet b;
-                b.setup(ofMap(maxLevelP2, 0, .9, 5, 10), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
+                b.setup(ofMap(maxLevelP2, 0, .9, 5, 15), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
                 bulletsP2.push_back(b);
             }
         }
@@ -615,14 +630,14 @@ void testApp::keyPressed (int key) {
             //bThreshWithOpenCV = !bThreshWithOpenCV;
             break;
             
-        case 'w':
-            kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
-            break;
+//        case 'w':
+//            kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
+//            break;
             
-        case 'o':
-            kinect.setCameraTiltAngle(angle); // go back to prev tilt
-            kinect.open();
-            break;
+//        case 'o':
+//            kinect.setCameraTiltAngle(angle); // go back to prev tilt
+//            kinect.open();
+//            break;
             
         case 'c':
             kinect.setCameraTiltAngle(0); // zero the tilt
@@ -657,7 +672,7 @@ void testApp::keyPressed (int key) {
             micSensitivity-=.05;
             break;
             
-        case 'r':
+        case 'e':
             oldYell.clear();
             player1.isWinning = false;
             player2.isWinning = false;
@@ -667,14 +682,45 @@ void testApp::keyPressed (int key) {
             grayImageOn = !grayImageOn;
             break;
             
+        case 'r':
+            reset();
+            break;
+            
+        case 'k':
+            isUsingKeyboard = !isUsingKeyboard;
+            break;
+            
     }
+    
+    if (key == 'q') {
+        player1.isMovingLeft = true;
+        player1.isMovingRight = false;
+    }
+    
+    if (key == 'w') {
+        player1.isMovingRight = true;
+        player1.isMovingLeft = false;
+    }
+    
+    if (key == 'o') {
+        player2.isMovingLeft = true;
+        player2.isMovingRight = false;
+    }
+    
+    if (key == 'p') {
+        player2.isMovingRight = true;
+        player2.isMovingLeft = false;
+    }
+    
 }
 //--------------------------------------------------------------
 void testApp::loadFromText() {
     // clear vectors to make it not fuck up in between games/quit games
+    enemies.clear();
     enemyXPos.clear();
     enemyYPos.clear();
     enemyTimeSpawn.clear();
+    enemyColors.clear();
     
     
     ifstream fin; // input file stream; file in
@@ -709,7 +755,59 @@ void testApp::loadFromText() {
     cout<<"done loading"<<endl;
     
 }
+//--------------------------------------------------------------
+void testApp::reset() {
+    //game stuff!----------------------
+    gameState = 0;
+    
+    bulletTimerP1 = 0;
+    bulletTimeP1 = 2; //frames
+    
+    bulletTimerP2 = 0;
+    bulletTimeP2 = 2; //frames
+    
+    enemiesShot = 0;
+    
+    gameScale = ofGetScreenWidth()/kinect.width;
+    
+    numLevelsToStore = 50;
+    
+    //    micSensitivity = .2;
+    micSensitivity = .3;
+    
+    inputBufferCopy = new float[512*2];
+    
+    oldYell.push_back(0.0f);
+    
+    shakeSensitivity = micSensitivity*1.2;
+    maxShake = 5;
+    
+    grayImageOn = true;
+    
+    // calling text file for waves of enemies
+    loadFromText();
+    
+    enemyTimer = 0;
+    //    enemyTime = 30;
+    enemyTime = 15;
+    
+    ofEnableAlphaBlending();
+    
+    for (int i = 0; i < 30; i++) {
+        ofVec2f s;
+        s.x = ofRandom(ofGetWidth());
+        s.y = ofRandom(ofGetHeight());
+        regularStars.push_back(s);
+    }
+    
+    boss.setup();
+    gameStartTime = ofGetElapsedTimeMillis();
+    
+    player1.numKilled = 0;
+    player2.numKilled = 0;
 
+    
+}
 //--------------------------------------------------------------
 void testApp::mouseDragged(int x, int y, int button)
 {}

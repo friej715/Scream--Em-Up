@@ -24,8 +24,8 @@ void Bullet::setup(float r, int f, int d, float x) {
     
     // so we want to link HUE to FREQUENCY and BRIGHTNESS to VOLUME (probs)
     // this hsb should be cleaned up some...
-    int ftemp = CLAMP(f, 0, 40);
-    color.setHsb(ofMap(ftemp, 0, 40, 160, 42), 255, 255, 255);
+    int ftemp = CLAMP(f, 0, 30);
+    color.setHsb(ofMap(ftemp, 0, 30, 160, 42), 255, 255, 255);
     cout << f << endl;
     
     //playerF = ofMap(f, 0, 50, 0, 255);

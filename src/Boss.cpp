@@ -61,11 +61,13 @@ void Boss::draw() {
     if (bossOnScreen == true) {
         ofSetColor(color);
         font.drawString("F", xPos-150, yPos);
+        //ofSetColor(255);
+        //ofEllipse(xPos, yPos - 113, 340, 227);
     }
     
     if (health <= 0) {
         bossOnScreen = false;
-        explode();
+        //explode();
     }
 }
 

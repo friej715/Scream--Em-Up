@@ -36,6 +36,7 @@ public:
     // game functions
     void addBullets();
     void checkBullets();
+    void reset();
 	
 	ofxKinect kinect;
 	
@@ -108,6 +109,8 @@ public:
     float micSensitivity;
     bool grayImageOn;
     float maxLevel;
+    
+    bool isUsingKeyboard;
     
     // osc
     // okay, let's talk about this for a second. below you'll find one osc receiver.

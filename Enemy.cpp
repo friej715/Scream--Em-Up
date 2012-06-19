@@ -44,4 +44,8 @@ void Enemy::draw() {
     ofSetColor(eColor);
     ofFill();
     enemyFont0.drawString("B", xPos, yPos);
+    //cout << enemyFont0.stringWidth("B") << endl;
+    //cout << enemyFont0.stringHeight("B") << endl;
+    //ofSetColor(255);
+    //ofEllipse(xPos + 22, yPos - 16, 44, 32);
 }
