@@ -22,6 +22,7 @@ void Player::setup() {
     
     hasStartedYelling = false;
     isWinning = false;
+    isActive = false;
     
     numKilled = 0;
     

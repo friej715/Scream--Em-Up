@@ -33,7 +33,7 @@ void testApp::setup() {
     // new kinect setup stuff
     isLive			= true;
 	isTracking		= true;
-	isTrackingHands	= true;
+	isTrackingHands	= false;
 	isFiltering		= false;
 	isRecording		= false;
 	isCloud			= false;
@@ -73,6 +73,9 @@ void testApp::setup() {
 
 //--------------------------------------------------------------
 void testApp::update() {
+    ofSetFrameRate(300);
+    ofSetVerticalSync(false);
+    cout << ofGetFrameRate() << endl;
     bulletTimerP1++; // this can always go up without a problem
     bulletTimerP2++; // bullet timer
     enemyTimer++; // timer for enemies; only relevant if not using text file
@@ -88,7 +91,62 @@ void testApp::update() {
         theme.play();
     }
     
+    // NEW KINECT STUFF; if there is a new frame and we are connected
+    if (isLive) {
+        if (blinkCounter%5==0) {
+        // update all nodes
+        recordContext.update();
+        recordDepth.update();
+        recordImage.update();
+        
+        // update tracking/recording nodes
+            if (isTracking) { 
+                recordUser.update();
+            }
+        }
+    } 
     
+    // here's where we actually set the positions, using the hip position. a bit wonky but we can tweak later
+    
+    if (recordUser.getNumberOfTrackedUsers() > 0) { // if anyone is tracked
+        cout << "tracking :" << recordUser.getNumberOfTrackedUsers() << endl; // print that ish out
+        
+        if (recordUser.getNumberOfTrackedUsers() == 2) { // if there are two users
+            ofxTrackedUser* trackedA = recordUser.getTrackedUser(1); // one of the tracked users
+            ofxTrackedUser* trackedB = recordUser.getTrackedUser(2); // and another
+            
+            if (recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(trackedA->id) && recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(trackedB->id)) { // honestly no idea what this does
+                if (trackedA->hip.position[1].X < trackedB->hip.position[1].X) { // if A is less than B
+                    player1.xPos = trackedA->hip.position[1].X; // player 1 is A
+                    player1.isActive = true;
+                    player2.xPos = trackedB->hip.position[1].X; // player 2 is B
+                    player2.isActive = true;
+                } else { // otherwise
+                    player1.xPos = trackedB->hip.position[1].X; // player 1 is B
+                    player1.isActive = true;
+                    player2.xPos = trackedA->hip.position[1].X; // player 2 is A
+                    player2.isActive = true;
+                }
+            }
+        } else if (recordUser.getNumberOfTrackedUsers() == 1) { // but if there's only one user
+            ofxTrackedUser* trackedA = recordUser.getTrackedUser(1); // figure out where they are
+            if(recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(trackedA->id)){ // do magic
+                if (trackedA->hip.position[1].X < ofGetWidth()/2) { // if they're to the left of the midpoint
+                    player1.xPos = trackedA->hip.position[1].X; // they should be player 1
+                    player1.isActive = true;
+                    player2.isActive = false;
+                } else { // otherwise
+                    player2.xPos = trackedA->hip.position[1].X; // they should be player 2
+                    player2.isActive = true;
+                    player1.isActive = false;
+                }
+            }
+        }
+        
+    } else {
+        player1.isActive = false;
+        player2.isActive = false;
+    }
     
     
     // ----- titlescreen -----
@@ -112,47 +170,6 @@ void testApp::update() {
     
     if (gameState == 1) {
         
-        // NEW KINECT STUFF; if there is a new frame and we are connected
-        if (isLive) {
-            // update all nodes
-            recordContext.update();
-            recordDepth.update();
-            recordImage.update();
-            
-            // demo getting depth pixels directly from depth gen
-            depthRangeMask.setFromPixels(recordDepth.getDepthPixels(nearThreshold, farThreshold),
-                                         recordDepth.getWidth(), recordDepth.getHeight(), OF_IMAGE_GRAYSCALE);
-            
-            // update tracking/recording nodes
-            if (isTracking) recordUser.update();
-            if (isRecording) oniRecorder.update();
-            
-            // demo getting pixels from user gen
-            if (isTracking && isMasking) {
-                allUserMasks.setFromPixels(recordUser.getUserPixels(), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-                user1Mask.setFromPixels(recordUser.getUserPixels(1), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-                user2Mask.setFromPixels(recordUser.getUserPixels(2), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-            }
-        } else {
-            // update all nodes
-            playContext.update();
-            playDepth.update();
-            playImage.update();
-            
-            // demo getting depth pixels directly from depth gen
-            depthRangeMask.setFromPixels(playDepth.getDepthPixels(nearThreshold, farThreshold),
-                                         playDepth.getWidth(), playDepth.getHeight(), OF_IMAGE_GRAYSCALE);
-            
-            // update tracking/recording nodes
-            if (isTracking) playUser.update();
-            
-            // demo getting pixels from user gen
-            if (isTracking && isMasking) {
-                allUserMasks.setFromPixels(playUser.getUserPixels(), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-                user1Mask.setFromPixels(playUser.getUserPixels(1), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-                user2Mask.setFromPixels(playUser.getUserPixels(2), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-            }
-        }
         
         if (enemyTimeSpawn.size()>0){
             if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
@@ -270,46 +287,6 @@ bool testApp::compareYells() {
 void testApp::draw() {
     ofBackground(0);
     
-//    ofSetColor(255, 255, 255);
-//    if (isLive) {
-//        ofEnableAlphaBlending();
-//        ofPushMatrix();
-//        ofTranslate(0, 300);
-//        recordUser.draw();
-//        ofPopMatrix();
-//        ofSetColor(0, 0, 0, 150);
-//        ofRect(0, 0, 1024, 768);
-//    } 
-    
-    
-    // here's where we actually set the positions, using the hip position. a bit wonky but we can tweak later
-    
-    if (recordUser.getNumberOfTrackedUsers() > 0) {
-        cout << "tracking :" << recordUser.getNumberOfTrackedUsers() << endl;
-        
-        if (recordUser.getNumberOfTrackedUsers() == 1) {
-            ofxTrackedUser* tracked1 = recordUser.getTrackedUser(1);
-            if( recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(tracked1->id)){
-                player1.xPos = tracked1->hip.position[1].X;
-                printf("%f/",player1.xPos);
-            }
-        } else if (recordUser.getNumberOfTrackedUsers() == 2) {
-            ofxTrackedUser* tracked1 = recordUser.getTrackedUser(1);
-            if( recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(tracked1->id)){
-                player1.xPos = tracked1->hip.position[1].X;
-                printf("%f/",player1.xPos);
-            }
-            
-            ofxTrackedUser* tracked2 = recordUser.getTrackedUser(2);
-            if( recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(tracked2->id)){
-                player2.xPos = tracked2->hip.position[1].X;
-                printf("%f/",player2.xPos);
-            }
-   
-        }
-        
-    }
-    
     // ----- titlescreen -----
     if (gameState == 0) {
         
@@ -351,24 +328,39 @@ void testApp::draw() {
 //        }
 //        ofPopMatrix();
         
+        ofSetColor(255);
         
-        // calibration for each player
+        // when they're not ready
         if (blinkCounter%300 > 150) {
-            if (recordUser.getNumberOfTrackedUsers() == 0) {
-                // if no players are tracked
-                ofSetColor(255);
+            if (!player1.isActive) {
                 calibrateFont.drawString("CALIBRATE PLAYER 1", 70, ofGetHeight()-50);
-                calibrateFont.drawString("CALIBRATE PLAYER 2", ofGetWidth()/2 + 70, ofGetHeight()-50);
+            }
+            if (!player2.isActive) {
+                calibrateFont.drawString("CALIBRATE PLAYER 2", ofGetWidth()/2 + 70, ofGetHeight()-50);   
             }
         }
         
         
         
+        // when they're ready -- DOESN'T WORK YET, needs to be able to switch back to off
+        if (recordUser.getNumberOfTrackedUsers() > 0) {
+            if (player1.isActive) {
+                calibrateFont.drawString("PLAYER 1 READY!", 90, ofGetHeight()-50);
+            }
+            
+            if (player2.isActive) {
+                calibrateFont.drawString("PLAYER 2 READY!", ofGetWidth()/2+90, ofGetHeight()-50);
+            }
+        }
         
-//        if (blinkCounter%300 > 150) {
-//            ofSetColor(255);
-//            scoreFont.drawString("SCREAM TO START", ofGetWidth()/2 - 225, ofGetHeight() - 75);
-//        }
+        
+        
+        if (player1.isActive && player2.isActive) {
+            if (blinkCounter%300 > 150) {
+                ofSetColor(255);
+                scoreFont.drawString("SCREAM TO START!", ofGetWidth()/2 - 225, ofGetHeight() - 150);
+            }
+        }
         
 
     

@@ -29,6 +29,7 @@ public:
     bool isWinning;
     bool isMovingLeft;
     bool isMovingRight;
+    bool isActive;
     
     void setup();
     void update();
