@@ -2,35 +2,32 @@
 
 /*
  to-do:
- - make tracking title screen words work right
- - if-statement the 'scream to start'
- - 3-2-1
+ ? 3-2-1
+ - fix positions to make them more linear (probably map)
  
  
  - phone: make app resettable
  - ensure all hitboxes work
- - add in explosions
- - add in music
- - fix ts
+ - extra credit: add in explosions
  - extra credit: add in some kind of recording
  */
 
 
 //--------------------------------------------------------------
 void testApp::setup() {
-    
+
+// game fonts and music
     titleFont.loadFont("arcade.ttf", 72);
     scoreFont.loadFont("arcade.ttf", 30);
     calibrateFont.loadFont("arcade.ttf", 20);
     logo.loadImage("logo_sq.png");
-    
     theme.loadSound("phantom.mp3");
-//    theme.play();
+//  theme.play();
     
     
 	ofSetLogLevel(OF_LOG_VERBOSE);
     
-    // new kinect setup stuff
+// new kinect setup stuff
     isLive			= true;
 	isTracking		= true;
 	isTrackingHands	= false;
@@ -47,51 +44,45 @@ void testApp::setup() {
     
 	setupRecording();
     
-    // OSC port stuff--will need 2 for 2 players, duh
+// OSC port stuff--will need 2 for 2 players, duh
     receiverP1.setup(8014);
     receiverP2.setup(8015);
     
-    //setting up the audio
+// setting up the audio
     ofSoundStreamSetup(0, 2, this, 44100, 256, 4);
-        
-    isUsingKeyboard = false;
-    reset();
-    
-    gameState = 0;
-    
-    startAngle = 0;
-    
-    for (int i = 0; i < 40; i++) {
-        angles.push_back(startAngle);
-        startAngle+=9;
-    }
+
+
+// game variables
+    reset(); // resetting the game
+    gameState = 1; // starting at title screen
+
+// defining game parameters under the hood
+    ofSetFrameRate(300);
+    ofSetVerticalSync(false);
     
     
-//    cout << boss.font.stringWidth("F") << endl;
-//    cout << boss.font.stringHeight("F") << endl;
 }
 
 //--------------------------------------------------------------
 void testApp::update() {
-    ofSetFrameRate(300);
-    ofSetVerticalSync(false);
-    cout << ofGetFrameRate() << endl;
+
+// ---- ALWAYS -----
+// game timers
     bulletTimerP1++; // this can always go up without a problem
     bulletTimerP2++; // bullet timer
-    enemyTimer++; // timer for enemies; only relevant if not using text file
     
-	hardware.update(); // only works on mac at moment; just updating the kinect
-    
+// game functions we want running at all times
     checkIfYelling(); // ALWAYS want to check if yelling. it's how we control anything, including starting, restarting, etc.
-    compareYells();
-
     
+// making sure the theme music is always playing (since loop never really seems to work)
     if (theme.getPosition() == 1) {
         theme.setPosition(0);
         theme.play();
     }
+
+// NEW KINECT STUFF
+    hardware.update(); // only works on mac at moment; just updating the kinect
     
-    // NEW KINECT STUFF; if there is a new frame and we are connected
     if (isLive) {
         if (blinkCounter%5==0) {
         // update all nodes
@@ -106,8 +97,7 @@ void testApp::update() {
         }
     } 
     
-    // here's where we actually set the positions, using the hip position. a bit wonky but we can tweak later
-    
+    // here's where we actually set the positions, using the hip position
     if (recordUser.getNumberOfTrackedUsers() > 0) { // if anyone is tracked
         cout << "tracking :" << recordUser.getNumberOfTrackedUsers() << endl; // print that ish out
         
@@ -149,9 +139,9 @@ void testApp::update() {
     }
     
     
-    // ----- titlescreen -----
+// ----- TITLESCREEN -----
     if (gameState == 0) {
-        if (maxLevelP1 > micSensitivity || maxLevelP2 > micSensitivity) {
+        if ((maxLevelP1 > micSensitivity && maxLevelP2 > micSensitivity) && (player1.isActive && player2.isActive) ) {
             gameState = 1;
             gameStartTime = ofGetElapsedTimeMillis();
         }
@@ -159,18 +149,11 @@ void testApp::update() {
         
     }
     
-    //    use the below code if you just want enemies to pop out whenever (i.e. if you want to test general stuff, not levels)
-//    if (enemyTimer > enemyTime) {
-//        enemyTimer = 0;
-//        Enemy e;
-//        e.setup(ofRandom(ofGetWidth()), 0);
-//        enemies.push_back(e);
-//    }
     
-    
+// ----- GAME ON -----
     if (gameState == 1) {
         
-        
+        // spawning our enemies from the text file
         if (enemyTimeSpawn.size()>0){
             if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
                 // spawn new enemy
@@ -186,24 +169,18 @@ void testApp::update() {
             }
         }
     
-    
-
-                
-        addBullets(); // adding bullets when yelling; moved to a function because unlikely to change much in this context
-//        checkBullets(); // checking bullets; moved to a function because we won't really change it often
+        // adding and checking bullets
+        addBullets();
+        checkBullets();
         
         // update our enemies
         for (int i = 0; i < enemies.size(); i++) {
             enemies[i].update();
         }
         
+        // update our player positions
         player1.update();
         player2.update();
-        
-        // just in case we need to demo, i guess?
-        if (isUsingKeyboard == false) {
-
-        }
         
         // filling up the yells with the various volumes
         if (player1.hasStartedYelling == true) { //player is currently yelling.
@@ -227,67 +204,13 @@ void testApp::update() {
 
 
 //--------------------------------------------------------------
-bool testApp::compareYells() {
-    float newYellMaxP1 = 0.0;
-    float newYellMaxP2 = 0.0;
-    float oldYellMax = 0.0;
-    
-    for (int i = 0; i < newYellP1.size(); i++) {
-        if (newYellMaxP1 < newYellP1[i]) {
-            newYellMaxP1 = newYellP1[i];
-        }
-    }
-    
-    for (int i = 0; i < newYellP2.size(); i++) {
-        if (newYellMaxP2 < newYellP2[i]) {
-            newYellMaxP2 = newYellP2[i];
-        }
-    }
-    
-    for (int i = 0; i < oldYell.size(); i++) {
-        if (oldYellMax < oldYell[i]) {
-            oldYellMax = oldYell[i];
-        }
-    }
-    
-//    cout << "old yell max " << oldYellMax << endl;
-//    cout << "new yell max p1 " << newYellMaxP1 << endl;
-//    cout << "new yell max p2 " << newYellMaxP2 << endl;
-    
-    if (newYellMaxP1 > oldYellMax) {
-        // can escalate by moving the above code into here. that way you always have to top the loudest
-        oldYell.clear();
-        for (int i = 0; i < newYellP1.size(); i++) {
-            oldYell.push_back(newYellP1[i]);
-        }
-        newYellP1.clear();
-        player1.isWinning = true;
-        player2.isWinning = false;
-//        cout << "hooray P1" << endl;
-        return true;
-    } else if (newYellMaxP2 > oldYellMax) {
-        oldYell.clear();
-        for (int i = 0; i < newYellP2.size(); i++) {
-            oldYell.push_back(newYellP2[i]);
-        }
-        newYellP2.clear();
-        player2.isWinning = true;
-        player1.isWinning = false;
-//        cout << "hooray P2" << endl;
-        return true;
-    } else {
-//        cout << "boo" << endl;
-        return false;
-        
-    }
-    
-}
-
-//--------------------------------------------------------------
 void testApp::draw() {
+
+// ----- ALWAYS -----
+    
     ofBackground(0);
     
-    // ----- titlescreen -----
+// ----- TITLESCREEN -----
     if (gameState == 0) {
         
         float shake = 0;
@@ -312,21 +235,6 @@ void testApp::draw() {
         logo.draw((ofGetWidth()/2) - (logo.width/2), 50);
         ofDisableAlphaBlending();
         ofPopMatrix();
-        
-        
-        
-// drawin' der lines
-//        ofPushMatrix();
-//        ofRotate(ofRandom(2));
-//        // drawing lines?
-//        for (int i = 0; i < angles.size(); i++) {
-//            float nang = ofDegToRad(angles[i]);
-//            ofSetLineWidth(4);
-//            // this line will be relevant:   
-//            //ofRect(ofGetWidth()/4.0, ofGetHeight(), 50, -ofMap(maxLevelP1, 0, micSensitivity, 0, ofGetHeight()-160));
-//            ofLine(ofGetWidth()/2, ofGetHeight()/2, ofGetWidth()/2 + cos(nang)*500, ofGetHeight()/2+sin(nang)*500);
-//        }
-//        ofPopMatrix();
         
         ofSetColor(255);
         
@@ -364,62 +272,31 @@ void testApp::draw() {
         
 
     
-        
+        // blinking whatever text needs to be blinked
         blinkCounter++;
         
     }
     
+// ----- GAME ON -----
     if (gameState == 1) {
+        // clear any old color/tints
+        ofSetColor(255, 255, 255);
         
-//        grayImageOn;
-        
-        ofBackground(0);
+        // shaking the screen based on how loud the players are
         float shake = 0;
         if (maxLevelP1 > shakeSensitivity) {
             shake = ofMap(maxLevelP1, shakeSensitivity, .5, 0, maxShake); 
         } else if (maxLevelP2 > shakeSensitivity) {
             shake = ofMap(maxLevelP2, shakeSensitivity, .5, 0, maxShake);
         }
-        
         ofPushMatrix();
         ofTranslate(ofRandom(shake), ofRandom(shake));
-        ofSetColor(255, 255, 255);
         
-        
-//        if (grayImageOn) {
-//            grayDiff.draw(0, 0, grayDiff.width*gameScale, grayDiff.height*gameScale);
-//        }
-        
-        if (enemyTimer > enemyTime) {
-            enemyTimer = 0;
-            ofVec2f s;
-            s.x = ofRandom(ofGetWidth());
-            s.y = 0;
-            regularStars.push_back(s);
-        }
-        
-        for (int i = 0; i < regularStars.size(); i++) {
-            regularStars[i].y+=2;
-            ofSetColor(255);
-            ofRect(regularStars[i].x, regularStars[i].y, 2, 2);
-        }
-        
-        //game stuff! 
-        checkBullets(); // checking bullets; moved to a function because we won't really change it often
-        
-//        if (player1.isWinning) {
-//            ofDrawBitmapString("Player 1 is louder!", ofGetWidth()/(ofRandom(1.98,2)), 100);
-//           // player1.numKilled+=1;
-//        }
-//        
-//        if (player2.isWinning) {
-//            ofDrawBitmapString("Player 2 is louder!", ofGetWidth()/(ofRandom(1.98,2)), 100);
-//           // player2.numKilled+=2;
-//        }
-        
+        // drawing our players
         player1.draw();
         player2.draw();
         
+        // drawing our bullets
         for (int i = 0; i < bulletsP1.size(); i++) {
             bulletsP1[i].draw();
         }
@@ -428,10 +305,12 @@ void testApp::draw() {
             bulletsP2[i].draw();
         }
         
+        // drawing our enemies
         for (int i = 0; i < enemies.size(); i++) {
             enemies[i].draw();
         }
         
+        // drawing our boss
         if (boss.bossOnScreen == true) {
             boss.draw();
         }
@@ -441,20 +320,26 @@ void testApp::draw() {
         scoreFont.drawString("Player 1: " + ofToString(player1.numKilled), 70, 50);
         scoreFont.drawString("Player 2: " + ofToString(player2.numKilled), ofGetWidth()/2+70, 50);
         
+        // ending our shake-translate
         ofPopMatrix();
         
+        // switching based on whether you kill the boss or he gets away
         if (boss.health < 0 || boss.yPos >= ofGetHeight()) {
             gameState = 3;
         }
     }
-    
+
+// ----- END SCREEN -----
     if (gameState == 3) {
+        
+        // didja kill him?
         if (boss.health <= 0) {
             titleFont.drawString("PWNED!!!1", ofGetWidth()/3, ofGetHeight()/2);
         } else {
             titleFont.drawString("BOSS\nESCAPED", ofGetWidth()/3, ofGetHeight()/2);
         }
         
+        // who won?
         if (player1.numKilled > player2.numKilled) {
             scoreFont.drawString("PLAYER 1 WINS!!1~", ofGetWidth()/3, 500);
         } else {
@@ -466,51 +351,33 @@ void testApp::draw() {
 //--------------------------------------------------------------
 
 void testApp::checkIfYelling() {
-    
+// are they yelling?    
+    // is P1 yelling?
     if (maxLevelP1 > micSensitivity && player1.hasStartedYelling == false) {
         player1.hasStartedYelling = true;
-        cout << "start yelling" << endl;
     } 
     
     // is P2 yelling?
     if (maxLevelP2 > micSensitivity && player2.hasStartedYelling == false) {
         player2.hasStartedYelling = true;
-        cout << "start yelling" << endl;
     }
     
-    // if they have stopped yelling (effectively--they're not hitting the threshold), we should compare their yells
+// if they have stopped yelling (effectively--they're not hitting the threshold), we should compare their yells
     // p1
     if (player1.hasStartedYelling == true && maxLevelP1 <= micSensitivity){
         player1.hasStartedYelling = false;
-        cout << "stopyelling" << endl;
-        //do whatever should happen when they stop yelling
-        compareYells();
     }
     // p2
     if (player2.hasStartedYelling == true && maxLevelP2 <= micSensitivity){
         player2.hasStartedYelling = false;
-        cout << "stopyelling" << endl;
-        //do whatever should happen when they stop yelling
-        compareYells();
     }
     
-}
-
-
-//--------------------------------------------------------------
-
-
-void testApp::audioReceived (float * input, int bufferSize, int nChannels){   
-    maxLevel = 0.0f; //reset max to minimum each snd buffer  
-    for (int i = 0; i < bufferSize; i++){  
-        float abs1 = ABS(input[i*2]);   
-        if (maxLevel < abs1) maxLevel = abs1; // grab highest value  
-    }  
 }
 
 //--------------------------------------------------------------
 
 void testApp::checkBullets() {
+// seeing if any bullets hit any enemies
     // checking P1 bullets against enemies
     for (int i = 0; i < enemies.size(); i++) {
         for (int k = 0; k < bulletsP1.size(); k++) {
@@ -551,7 +418,7 @@ void testApp::checkBullets() {
         }
     }
     
-    // updating bullets and deleting them if they're offscreen
+// updating bullets and deleting them if they're offscreen
     // p1
     for (int i = 0; i < bulletsP1.size(); i++) {
         bulletsP1[i].update();
@@ -560,7 +427,7 @@ void testApp::checkBullets() {
         }
     }
     
-    // updating bullets and deleting them if they're offscreen
+    // p2
     for (int i = 0; i < bulletsP2.size(); i++) {
         bulletsP2[i].update();
         if (bulletsP2[i].yPos < 0) {
@@ -568,6 +435,7 @@ void testApp::checkBullets() {
         }
     }
     
+// criteria for hitting the boss--must be true to do damage
     if (boss.bossOnScreen == true && boss.shieldsUp == false) {
         for (int i = 0; i < bulletsP1.size(); i++) {
             if (ofDist(bulletsP1[i].xPos, bulletsP1[i].yPos, boss.xPos + 170, boss.yPos - 113) < 170) {
@@ -590,9 +458,8 @@ void testApp::checkBullets() {
 //--------------------------------------------------------------
 
 void testApp::addBullets() {
-    // this should be where we should be taking our OSC messages and passing them into b.setup() to change stuff.
-    
-    // so let's get our osc messages first.
+//where we should be taking our OSC messages and passing them into b.setup() to change stuff.
+    // p1
     while (receiverP1.hasWaitingMessages()) {
         cout<<"got from 1"<<endl;
         ofxOscMessage mP1;
@@ -612,6 +479,7 @@ void testApp::addBullets() {
         }
     }
     
+    // p2
     while (receiverP2.hasWaitingMessages()) {
         cout<<"got from 2"<<endl;
         ofxOscMessage mP2;
@@ -630,7 +498,7 @@ void testApp::addBullets() {
         }
     }
     
-    //set max level as the average of our recently recorded levels
+//set max level as the average of our recently recorded levels
     //p1
     maxLevelP1=0.0;
     for (int i=0; i<maxLevelsP1.size(); i++){
@@ -645,25 +513,28 @@ void testApp::addBullets() {
     }
     maxLevelP2/= (float)maxLevelsP2.size();
     
-    int diffBetweenMaxLoc = abs(p1MaxLocForFFT - p2MaxLocForFFT);
-    // we will probably want to pass that to the bullet and map it onto velocity, size, wiggliness, etc. etc. but for now let's just see if they match at all. remember, we'll probably want to have a vector so we can see if they're sustaining the same frequency over time.
     
+// seeing how different the frequencies are
+    int diffBetweenMaxLoc = abs(p1MaxLocForFFT - p2MaxLocForFFT);
+
+// setting up the bullets    
     if (gameState == 1) {
-        // and now we'll pass the f out of this s to the bullet setup function.
+        // p1
         if (player1.hasStartedYelling) {
             if (bulletTimerP1 > bulletTimeP1) {
                 bulletTimerP1 = 0; //resetting the timer
                 Bullet b;
-                b.setup(ofMap(maxLevelP1, 0, .9, 5, 15), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
+                b.setup(ofMap(maxLevelP1, 0, .9, 10, 30), p1MaxLocForFFT, diffBetweenMaxLoc, player1.xPos);
                 bulletsP1.push_back(b);
             }
         }
         
+        //p2
         if (player2.hasStartedYelling) {
             if (bulletTimerP2 > bulletTimeP2) {
                 bulletTimerP2 = 0; //resetting the timer
                 Bullet b;
-                b.setup(ofMap(maxLevelP2, 0, .9, 5, 15), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
+                b.setup(ofMap(maxLevelP2, 0, .9, 10, 30), p2MaxLocForFFT, diffBetweenMaxLoc, player2.xPos);
                 bulletsP2.push_back(b);
             }
         }
@@ -676,14 +547,14 @@ void testApp::keyPressed(int key){
 	float smooth;
     
 	switch (key) {
-#ifdef TARGET_OSX // only working on Mac at the moment
+    #ifdef TARGET_OSX // only working on Mac at the moment
 		case 357: // up key
 			hardware.setTiltAngle(hardware.tilt_angle++);
 			break;
 		case 359: // down key
 			hardware.setTiltAngle(hardware.tilt_angle--);
 			break;
-#endif
+    #endif
         case 'y':
             //put anything you want here
             break;
@@ -810,105 +681,26 @@ void testApp::keyPressed(int key){
 			nearThreshold -= 50;
 			if (nearThreshold < 0) nearThreshold = 0;
 			break;
-		case 'r':
-			recordContext.toggleRegisterViewport();
-			break;
+//		case 'r':
+//			recordContext.toggleRegisterViewport();
+//			break;
 		default:
 			break;
+            
+        case 'a':
+            micSensitivity+=.05;
+            break;
+            
+        case 'z':
+            micSensitivity-=.05;
+            break;
+            
+        case 'r':
+            reset();
+            break;
 	}
 }
 
-
-//void testApp::keyPressed (int key) {
-//    switch (key) {
-//        case ' ':
-//            bLearnBackground = true;
-//            //bThreshWithOpenCV = !bThreshWithOpenCV;
-//            break;
-//            
-////        case 'w':
-////            kinect.enableDepthNearValueWhite(!kinect.isDepthNearValueWhite());
-////            break;
-//            
-////        case 'o':
-////            kinect.setCameraTiltAngle(angle); // go back to prev tilt
-////            kinect.open();
-////            break;
-//            
-//        case 'c':
-//            kinect.setCameraTiltAngle(0); // zero the tilt
-//            kinect.close();
-//            break;
-//            
-//        case OF_KEY_UP:
-//            angle++;
-//            if(angle>30) angle=30;
-//            kinect.setCameraTiltAngle(angle);
-//            break;
-//            
-//        case OF_KEY_DOWN:
-//            angle--;
-//            if(angle<-30) angle=-30;
-//            kinect.setCameraTiltAngle(angle);
-//            break;
-//            
-//        case '=':
-//            threshold++;
-//            break;
-//            
-//        case '-':
-//            threshold--;
-//            break;
-//            
-//        case 'a':
-//            micSensitivity+=.05;
-//            break;
-//            
-//        case 'z':
-//            micSensitivity-=.05;
-//            break;
-//            
-//        case 'e':
-//            oldYell.clear();
-//            player1.isWinning = false;
-//            player2.isWinning = false;
-//            break;
-//            
-//        case 'd':
-//            grayImageOn = !grayImageOn;
-//            break;
-//            
-//        case 'r':
-//            reset();
-//            break;
-//            
-//        case 'k':
-//            isUsingKeyboard = !isUsingKeyboard;
-//            break;
-//            
-//    }
-//    
-//    if (key == 'q') {
-//        player1.isMovingLeft = true;
-//        player1.isMovingRight = false;
-//    }
-//    
-//    if (key == 'w') {
-//        player1.isMovingRight = true;
-//        player1.isMovingLeft = false;
-//    }
-//    
-//    if (key == 'o') {
-//        player2.isMovingLeft = true;
-//        player2.isMovingRight = false;
-//    }
-//    
-//    if (key == 'p') {
-//        player2.isMovingRight = true;
-//        player2.isMovingLeft = false;
-//    }
-//    
-//}
 //--------------------------------------------------------------
 void testApp::loadFromText() {
     // clear vectors to make it not fuck up in between games/quit games
@@ -964,37 +756,15 @@ void testApp::reset() {
     
     enemiesShot = 0;
     
-//    gameScale = ofGetScreenWidth()/kinect.width;
-    
     numLevelsToStore = 50;
-    
-    //    micSensitivity = .2;
+
     micSensitivity = .3;
-    
-    inputBufferCopy = new float[512*2];
-    
-    oldYell.push_back(0.0f);
     
     shakeSensitivity = micSensitivity*1.2;
     maxShake = 5;
     
-    grayImageOn = true;
-    
     // calling text file for waves of enemies
     loadFromText();
-    
-    enemyTimer = 0;
-    //    enemyTime = 30;
-    enemyTime = 15;
-    
-    ofEnableAlphaBlending();
-    
-    for (int i = 0; i < 30; i++) {
-        ofVec2f s;
-        s.x = ofRandom(ofGetWidth());
-        s.y = ofRandom(ofGetHeight());
-        regularStars.push_back(s);
-    }
     
     boss.setup();
     gameStartTime = ofGetElapsedTimeMillis();
@@ -1074,49 +844,7 @@ void testApp::setupPlayback(string _filename) {
 	playContext.toggleMirror();
     
 }
-// --------------------------------------------------------------
-void testApp:: drawMasks() {
-	glPushMatrix();
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ZERO);
-	allUserMasks.draw(640, 0, 640, 480);
-	glDisable(GL_BLEND);
-    glPopMatrix();
-	user1Mask.draw(320, 480, 320, 240);
-	user2Mask.draw(640, 480, 320, 240);
-	
-}
-// --------------------------------------------------------------
-void testApp::drawPointCloud(ofxUserGenerator * user_generator, int userID) {
-    
-	glPushMatrix();
-    
-	int w = user_generator->getWidth();
-	int h = user_generator->getHeight();
-    
-	glTranslatef(w, h/2, -500);
-	ofRotateY(pointCloudRotationY);
-    
-	glBegin(GL_POINTS);
-    
-	int step = 1;
-    
-	for(int y = 0; y < h; y += step) {
-		for(int x = 0; x < w; x += step) {
-			ofPoint pos = user_generator->getWorldCoordinateAt(x, y, userID);
-			if (pos.z == 0 && isCPBkgnd) continue;	// gets rid of background -> still a bit weird if userID > 0...
-			ofColor color = user_generator->getWorldColorAt(x,y, userID);
-			glColor4ub((unsigned char)color.r, (unsigned char)color.g, (unsigned char)color.b, (unsigned char)color.a);
-			glVertex3f(pos.x, pos.y, pos.z);
-		}
-	}
-    
-	glEnd();
-    
-	glColor3f(1.0f, 1.0f, 1.0f);
-    
-	glPopMatrix();
-}
+
 //--------------------------------------------------------------
 string testApp::generateFileName() {
     

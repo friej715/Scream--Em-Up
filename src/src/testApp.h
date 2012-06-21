@@ -14,10 +14,6 @@
 #define PORT1 8000 // player 1, 8000 for now
 #define PORT2 8001 // player 2, 8001 for now
 
-
-// uncomment this to read from two kinects simultaneously
-//#define USE_TWO_KINECTS
-
 class testApp : public ofBaseApp {
 public:
 	
@@ -40,8 +36,8 @@ public:
     void reset();
 
     // audio from microphone
-    void audioReceived (float * input, int bufferSize, int nChannels);
-    float * inputBufferCopy;
+//    void audioReceived (float * input, int bufferSize, int nChannels);
+//    float * inputBufferCopy;
     
     float volumeP1;
     float maxLevelP1;
@@ -50,9 +46,28 @@ public:
     float volumeP2;
     float maxLevelP2;
     vector<float> maxLevelsP2; // for smoothing
-
     
     int numLevelsToStore; // number of max levels to store
+    
+    // osc
+    // okay, let's talk about this for a second. below you'll find one osc receiver.
+    ofxOscReceiver receiverP1;
+    ofxOscReceiver receiverP2;
+    
+    
+    // the vector for the yelling, which will store all the volume variables of that yell.
+    vector<float> newYellP1;
+    vector<float> newYellP2;
+    vector<float> oldYell;
+    void checkIfYelling();
+    
+    // babby's first fft variables. let's just go with one int (for the location of the max) rather than a vector. although we'll want a vector for point bonuses so we can smooth and see how long they're the same, probably.
+    int p1MaxLocForFFT;
+    int p2MaxLocForFFT;
+    
+    
+    
+    
     
     // game!
     Enemy enemy;
@@ -71,6 +86,9 @@ public:
     
     void loadFromText();
     
+    
+    
+    
     //timers
     int bulletTimerP1;
     int bulletTimeP1; //actual interval you want to use
@@ -84,8 +102,8 @@ public:
     
     int enemiesShot;
     
-    int enemyTimer;
-    int enemyTime;
+//    int enemyTimer;
+//    int enemyTime;
     
     //debugging/testing
     float micSensitivity;
@@ -93,23 +111,6 @@ public:
     float maxLevel;
     
     bool isUsingKeyboard;
-    
-    // osc
-    // okay, let's talk about this for a second. below you'll find one osc receiver.
-    ofxOscReceiver receiverP1;
-    ofxOscReceiver receiverP2;
-    
-    
-    // the vector for the yelling, which will store all the volume variables of that yell.
-    vector<float> newYellP1;
-    vector<float> newYellP2;
-    vector<float> oldYell;
-    bool compareYells();
-    void checkIfYelling();
-    
-    // babby's first fft variables. let's just go with one int (for the location of the max) rather than a vector. although we'll want a vector for point bonuses so we can smooth and see how long they're the same, probably.
-    int p1MaxLocForFFT;
-    int p2MaxLocForFFT;
     
     // visual effect tryout
     float shakeSensitivity;
@@ -125,9 +126,7 @@ public:
     
     // logo
     ofImage logo;
-    
-    // background stars
-    vector<ofVec2f> regularStars;
+
     
     Boss boss;
     
@@ -142,20 +141,20 @@ public:
 	ofxOpenNIContext	recordContext, playContext;
 	ofxDepthGenerator	recordDepth, playDepth;
     
-#ifdef USE_IR
-	ofxIRGenerator		recordImage, playImage;
-#else
-	ofxImageGenerator	recordImage, playImage;
-#endif
+    #ifdef USE_IR
+        ofxIRGenerator		recordImage, playImage;
+    #else
+        ofxImageGenerator	recordImage, playImage;
+    #endif
     
 	ofxHandGenerator	recordHandTracker, playHandTracker;
     
 	ofxUserGenerator	recordUser, playUser;
 	ofxOpenNIRecorder	oniRecorder;
     
-#if defined (TARGET_OSX) //|| defined(TARGET_LINUX) // only working on Mac/Linux at the moment (but on Linux you need to run as sudo...)
-	ofxHardwareDriver	hardware;
-#endif
+    #if defined (TARGET_OSX) //|| defined(TARGET_LINUX) // only working on Mac/Linux at the moment (but on Linux you need to run as sudo...)
+        ofxHardwareDriver	hardware;
+    #endif
     
 	void				drawMasks();
 	void				drawPointCloud(ofxUserGenerator * user_generator, int userID);
@@ -170,9 +169,6 @@ public:
     int hipX1;
     
     int blinkCounter;
-
-    vector<float> angles;
-    float startAngle;
     
     ofSoundPlayer theme;
 
