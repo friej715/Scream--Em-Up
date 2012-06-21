@@ -122,6 +122,9 @@ public:
     ofTrueTypeFont titleFont;
     ofTrueTypeFont scoreFont;
     
+    // logo
+    ofImage logo;
+    
     // background stars
     vector<ofVec2f> regularStars;
     
@@ -164,6 +167,13 @@ public:
 	float				filterFactor;
     
     int hipX1;
+    
+    int blinkCounter;
+
+    vector<float> angles;
+    float startAngle;
+    
+    ofSoundPlayer theme;
 
     
     

@@ -2,6 +2,12 @@
 
 /*
  to-do:
+ - phone: make app resettable
+ - ensure all hitboxes work
+ - add in explosions
+ - add in music
+ - add in title screen
+ - extra credit: add in some kind of recording
  */
 
 
@@ -10,6 +16,12 @@ void testApp::setup() {
     
     titleFont.loadFont("arcade.ttf", 72);
     scoreFont.loadFont("arcade.ttf", 30);
+    logo.loadImage("logo_sq2.png");
+    
+    theme.loadSound("phantom.mp3");
+    theme.play();
+    
+    
 	ofSetLogLevel(OF_LOG_VERBOSE);
     
     // new kinect setup stuff
@@ -35,63 +47,22 @@ void testApp::setup() {
     
     //setting up the audio
     ofSoundStreamSetup(0, 2, this, 44100, 256, 4);
-    
-//    //game stuff!----------------------
-//    
-//    bulletTimerP1 = 0;
-//    bulletTimeP1 = 2; //frames
-//    
-//    bulletTimerP2 = 0;
-//    bulletTimeP2 = 2; //frames
-//    
-//    enemiesShot = 0;
-//    
-//    gameScale = ofGetScreenWidth()/kinect.width;
-//    
-//    numLevelsToStore = 50;
-//    
-////    micSensitivity = .2;
-//    micSensitivity = .8;
-//    
-//    inputBufferCopy = new float[512*2];
-//    
-//    oldYell.push_back(0.0f);
-//    
-//    shakeSensitivity = micSensitivity*1.2;
-//    maxShake = 5;
-//    
-//    grayImageOn = true;
-//    
-//    // calling text file for waves of enemies
-//    loadFromText();
-//    
-//    // gamestate
-//    gameState = 0;
-//    
-//    
-//    enemyTimer = 0;
-////    enemyTime = 30;
-//    enemyTime = 15;
-//
-//    ofEnableAlphaBlending();
-//
-//    for (int i = 0; i < 30; i++) {
-//        ofVec2f s;
-//        s.x = ofRandom(ofGetWidth());
-//        s.y = ofRandom(ofGetHeight());
-//        regularStars.push_back(s);
-//    }
-//    
-//    boss.setup();
-//    gameStartTime = ofGetElapsedTimeMillis();
-    
+        
     isUsingKeyboard = false;
     reset();
     
-    gameState = 1;
+    gameState = 0;
     
-    cout << boss.font.stringWidth("F") << endl;
-    cout << boss.font.stringHeight("F") << endl;
+    startAngle = 0;
+    
+    for (int i = 0; i < 40; i++) {
+        angles.push_back(startAngle);
+        startAngle+=9;
+    }
+    
+    
+//    cout << boss.font.stringWidth("F") << endl;
+//    cout << boss.font.stringHeight("F") << endl;
 }
 
 //--------------------------------------------------------------
@@ -106,6 +77,55 @@ void testApp::update() {
     compareYells();
 
     
+    if (theme.getPosition() == 1) {
+        theme.setPosition(0);
+        theme.play();
+    }
+    
+    // NEW KINECT STUFF; if there is a new frame and we are connected
+    if (isLive) {
+        // update all nodes
+        recordContext.update();
+        recordDepth.update();
+        recordImage.update();
+        
+        // demo getting depth pixels directly from depth gen
+        depthRangeMask.setFromPixels(recordDepth.getDepthPixels(nearThreshold, farThreshold),
+                                     recordDepth.getWidth(), recordDepth.getHeight(), OF_IMAGE_GRAYSCALE);
+        
+        // update tracking/recording nodes
+        if (isTracking) recordUser.update();
+        if (isRecording) oniRecorder.update();
+        
+        // demo getting pixels from user gen
+        if (isTracking && isMasking) {
+            allUserMasks.setFromPixels(recordUser.getUserPixels(), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
+            user1Mask.setFromPixels(recordUser.getUserPixels(1), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
+            user2Mask.setFromPixels(recordUser.getUserPixels(2), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
+        }
+    } else {
+        // update all nodes
+        playContext.update();
+        playDepth.update();
+        playImage.update();
+        
+        // demo getting depth pixels directly from depth gen
+        depthRangeMask.setFromPixels(playDepth.getDepthPixels(nearThreshold, farThreshold),
+                                     playDepth.getWidth(), playDepth.getHeight(), OF_IMAGE_GRAYSCALE);
+        
+        // update tracking/recording nodes
+        if (isTracking) playUser.update();
+        
+        // demo getting pixels from user gen
+        if (isTracking && isMasking) {
+            allUserMasks.setFromPixels(playUser.getUserPixels(), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
+            user1Mask.setFromPixels(playUser.getUserPixels(1), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
+            user2Mask.setFromPixels(playUser.getUserPixels(2), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
+        }
+    }
+    
+    
+    
     
     // ----- titlescreen -----
     if (gameState == 0) {
@@ -114,6 +134,7 @@ void testApp::update() {
             gameStartTime = ofGetElapsedTimeMillis();
         }
         addBullets();
+        
     }
     
     //    use the below code if you just want enemies to pop out whenever (i.e. if you want to test general stuff, not levels)
@@ -140,71 +161,6 @@ void testApp::update() {
                 enemyTimeSpawn.erase(enemyTimeSpawn.begin());
                 enemyColors.erase(enemyColors.begin());
             }
-        }
-        
-        // NEW KINECT STUFF; if there is a new frame and we are connected
-        if (isLive) {
-            // update all nodes
-            recordContext.update();
-            recordDepth.update();
-            recordImage.update();
-            
-            // demo getting depth pixels directly from depth gen
-            depthRangeMask.setFromPixels(recordDepth.getDepthPixels(nearThreshold, farThreshold),
-                                         recordDepth.getWidth(), recordDepth.getHeight(), OF_IMAGE_GRAYSCALE);
-            
-            // update tracking/recording nodes
-            if (isTracking) recordUser.update();
-            if (isRecording) oniRecorder.update();
-            
-            // demo getting pixels from user gen
-            if (isTracking && isMasking) {
-                allUserMasks.setFromPixels(recordUser.getUserPixels(), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-                user1Mask.setFromPixels(recordUser.getUserPixels(1), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-                user2Mask.setFromPixels(recordUser.getUserPixels(2), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-            }
-        } else {
-            // update all nodes
-            playContext.update();
-            playDepth.update();
-            playImage.update();
-            
-            // demo getting depth pixels directly from depth gen
-            depthRangeMask.setFromPixels(playDepth.getDepthPixels(nearThreshold, farThreshold),
-                                         playDepth.getWidth(), playDepth.getHeight(), OF_IMAGE_GRAYSCALE);
-            
-            // update tracking/recording nodes
-            if (isTracking) playUser.update();
-            
-            // demo getting pixels from user gen
-            if (isTracking && isMasking) {
-                allUserMasks.setFromPixels(playUser.getUserPixels(), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-                user1Mask.setFromPixels(playUser.getUserPixels(1), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-                user2Mask.setFromPixels(playUser.getUserPixels(2), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-            }
-        }
-        
-        // here's where we actually set the positions, using the hip position. a bit wonky but we can tweak later
-        
-        if (recordUser.getNumberOfTrackedUsers() > 0) {
-//            if (recordUser.getNumberOfTrackedUsers() == 2) {
-//                ofxTrackedUser* tracked2 = recordUser.getTrackedUser(2);
-//                if( recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(tracked2->id)){
-//                    player2.xPos = tracked2->hip.position[1].X;
-//                    ofSetColor(255, 0, 0);
-//                    ofCircle(player2.xPos, 100, 10);
-//                    printf("%f/",player2.xPos);
-//                }
-//            }
-            
-            ofxTrackedUser* tracked1 = recordUser.getTrackedUser(1);
-            if( recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(tracked1->id)){
-                player1.xPos = tracked1->hip.position[1].X;
-                ofSetColor(255, 0, 0);
-                ofCircle(player1.xPos, 100, 10);
-                printf("%f/",player1.xPos);
-            }
-            
         }
     
     
@@ -271,9 +227,9 @@ bool testApp::compareYells() {
         }
     }
     
-    cout << "old yell max " << oldYellMax << endl;
-    cout << "new yell max p1 " << newYellMaxP1 << endl;
-    cout << "new yell max p2 " << newYellMaxP2 << endl;
+//    cout << "old yell max " << oldYellMax << endl;
+//    cout << "new yell max p1 " << newYellMaxP1 << endl;
+//    cout << "new yell max p2 " << newYellMaxP2 << endl;
     
     if (newYellMaxP1 > oldYellMax) {
         // can escalate by moving the above code into here. that way you always have to top the loudest
@@ -284,7 +240,7 @@ bool testApp::compareYells() {
         newYellP1.clear();
         player1.isWinning = true;
         player2.isWinning = false;
-        cout << "hooray P1" << endl;
+//        cout << "hooray P1" << endl;
         return true;
     } else if (newYellMaxP2 > oldYellMax) {
         oldYell.clear();
@@ -294,10 +250,10 @@ bool testApp::compareYells() {
         newYellP2.clear();
         player2.isWinning = true;
         player1.isWinning = false;
-        cout << "hooray P2" << endl;
+//        cout << "hooray P2" << endl;
         return true;
     } else {
-        cout << "boo" << endl;
+//        cout << "boo" << endl;
         return false;
         
     }
@@ -306,34 +262,99 @@ bool testApp::compareYells() {
 
 //--------------------------------------------------------------
 void testApp::draw() {
+    ofBackground(0);
+    
+    ofSetColor(255, 255, 255);
+    if (isLive) {
+        ofEnableAlphaBlending();
+        ofPushMatrix();
+        ofTranslate(0, 300);
+        recordUser.draw();
+        ofPopMatrix();
+        ofSetColor(0, 0, 0, 150);
+        ofRect(0, 0, 1024, 768);
+    } 
+    
+    
+    // here's where we actually set the positions, using the hip position. a bit wonky but we can tweak later
+    
+    if (recordUser.getNumberOfTrackedUsers() > 0) {
+        cout << "tracking :" << recordUser.getNumberOfTrackedUsers() << endl;
+        
+        if (recordUser.getNumberOfTrackedUsers() == 1) {
+            ofxTrackedUser* tracked1 = recordUser.getTrackedUser(1);
+            if( recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(tracked1->id)){
+                player1.xPos = tracked1->hip.position[1].X;
+                printf("%f/",player1.xPos);
+            }
+        } else if (recordUser.getNumberOfTrackedUsers() == 2) {
+            ofxTrackedUser* tracked1 = recordUser.getTrackedUser(1);
+            if( recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(tracked1->id)){
+                player1.xPos = tracked1->hip.position[1].X;
+                printf("%f/",player1.xPos);
+            }
+            
+            ofxTrackedUser* tracked2 = recordUser.getTrackedUser(2);
+            if( recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(tracked2->id)){
+                player2.xPos = tracked2->hip.position[1].X;
+                printf("%f/",player2.xPos);
+            }
+   
+        }
+        
+    }
+    
     // ----- titlescreen -----
     if (gameState == 0) {
         
-        
-        
-        ofBackground(0);
         float shake = 0;
-        shake = ofMap(maxLevelP1 + maxLevelP2, 0, .6, 0, 10);
+        //shake = ofMap(maxLevelP1 + maxLevelP2, 0, .6, 0, 10);
+        shake = ofRandom(1, 10);
         
+        player1.draw();
+        player2.draw();
+        
+        ofEnableAlphaBlending();
+        ofSetColor(0, 0, 0, 150);
+        ofRect(0, 0, ofGetWidth(), ofGetHeight());
         ofPushMatrix();
-        //ofTranslate(ofRandom(shake), ofRandom(shake));
         
+        // kulers
         ofColor c;
         c.setHsb(ofRandom(255), 255, 255, 255);
         ofSetColor(c);
-        titleFont.drawString("SCREAM 'EM UP!1", 0, 100);
         
-        ofSetColor(255);
-        scoreFont.drawString("YOU MUST BE THIS LOUD\n   TO PLAY THIS GAME", 200, 150);
-        
-        ofSetColor(c);
-        ofSetLineWidth(5);
-        ofLine(0, 160, ofGetWidth(), 160);
-        
-        ofRect(ofGetWidth()/4.0, ofGetHeight(), 50, -ofMap(maxLevelP1, 0, micSensitivity, 0, ofGetHeight()-160));
-        ofRect(ofGetWidth()*.75, ofGetHeight(), 50, -ofMap(maxLevelP2, 0, micSensitivity, 0, ofGetHeight()-160));
-        
+        // drawin' der logo
+        ofTranslate(ofRandom(shake), ofRandom(shake));
+        logo.draw((ofGetWidth()/2) - (logo.width/2), 50);
+        ofDisableAlphaBlending();
         ofPopMatrix();
+        
+        
+        
+// drawin' der lines
+//        ofPushMatrix();
+//        ofRotate(ofRandom(2));
+//        // drawing lines?
+//        for (int i = 0; i < angles.size(); i++) {
+//            float nang = ofDegToRad(angles[i]);
+//            ofSetLineWidth(4);
+//            // this line will be relevant:   
+//            //ofRect(ofGetWidth()/4.0, ofGetHeight(), 50, -ofMap(maxLevelP1, 0, micSensitivity, 0, ofGetHeight()-160));
+//            ofLine(ofGetWidth()/2, ofGetHeight()/2, ofGetWidth()/2 + cos(nang)*500, ofGetHeight()/2+sin(nang)*500);
+//        }
+//        ofPopMatrix();
+
+        
+        if (blinkCounter%300 > 150) {
+            ofSetColor(255);
+            scoreFont.drawString("SCREAM TO START", ofGetWidth()/2 - 225, ofGetHeight() - 75);
+        }
+        
+
+    
+        
+        blinkCounter++;
         
     }
     

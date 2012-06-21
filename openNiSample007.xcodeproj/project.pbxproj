@@ -623,9 +623,10 @@
 		BB3253B215911C2C00BECE08 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				BB3253DF15911C2C00BECE08 /* testApp.cpp */,
+				BB3253E015911C2C00BECE08 /* testApp.h */,
 				BB3253EB15911C9A00BECE08 /* Enemy.cpp */,
 				BB3253EC15911C9A00BECE08 /* Enemy.h */,
-				BB3253B315911C2C00BECE08 /* arcade.ttf */,
 				BB3253B415911C2C00BECE08 /* Boss.cpp */,
 				BB3253B515911C2C00BECE08 /* Boss.h */,
 				BB3253B615911C2C00BECE08 /* Bullet.cpp */,
@@ -634,9 +635,8 @@
 				BB3253B915911C2C00BECE08 /* main.cpp */,
 				BB3253DC15911C2C00BECE08 /* Player.cpp */,
 				BB3253DD15911C2C00BECE08 /* Player.h */,
+				BB3253B315911C2C00BECE08 /* arcade.ttf */,
 				BB3253DE15911C2C00BECE08 /* player.png */,
-				BB3253DF15911C2C00BECE08 /* testApp.cpp */,
-				BB3253E015911C2C00BECE08 /* testApp.h */,
 			);
 			name = src;
 			path = src/src;
