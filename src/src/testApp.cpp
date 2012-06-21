@@ -342,7 +342,7 @@ void testApp::draw() {
         
         
         
-        // when they're ready -- DOESN'T WORK YET, needs to be able to switch back to off
+        // when they're ready
         if (recordUser.getNumberOfTrackedUsers() > 0) {
             if (player1.isActive) {
                 calibrateFont.drawString("PLAYER 1 READY!", 90, ofGetHeight()-50);
