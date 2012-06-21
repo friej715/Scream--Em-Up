@@ -2,6 +2,11 @@
 
 /*
  to-do:
+ - make tracking title screen words work right
+ - if-statement the 'scream to start'
+ - 3-2-1
+ 
+ 
  - phone: make app resettable
  - ensure all hitboxes work
  - add in explosions
@@ -16,10 +21,11 @@ void testApp::setup() {
     
     titleFont.loadFont("arcade.ttf", 72);
     scoreFont.loadFont("arcade.ttf", 30);
+    calibrateFont.loadFont("arcade.ttf", 20);
     logo.loadImage("logo_sq.png");
     
     theme.loadSound("phantom.mp3");
-    theme.play();
+//    theme.play();
     
     
 	ofSetLogLevel(OF_LOG_VERBOSE);
@@ -82,48 +88,6 @@ void testApp::update() {
         theme.play();
     }
     
-    // NEW KINECT STUFF; if there is a new frame and we are connected
-    if (isLive) {
-        // update all nodes
-        recordContext.update();
-        recordDepth.update();
-        recordImage.update();
-        
-        // demo getting depth pixels directly from depth gen
-        depthRangeMask.setFromPixels(recordDepth.getDepthPixels(nearThreshold, farThreshold),
-                                     recordDepth.getWidth(), recordDepth.getHeight(), OF_IMAGE_GRAYSCALE);
-        
-        // update tracking/recording nodes
-        if (isTracking) recordUser.update();
-        if (isRecording) oniRecorder.update();
-        
-        // demo getting pixels from user gen
-        if (isTracking && isMasking) {
-            allUserMasks.setFromPixels(recordUser.getUserPixels(), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-            user1Mask.setFromPixels(recordUser.getUserPixels(1), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-            user2Mask.setFromPixels(recordUser.getUserPixels(2), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
-        }
-    } else {
-        // update all nodes
-        playContext.update();
-        playDepth.update();
-        playImage.update();
-        
-        // demo getting depth pixels directly from depth gen
-        depthRangeMask.setFromPixels(playDepth.getDepthPixels(nearThreshold, farThreshold),
-                                     playDepth.getWidth(), playDepth.getHeight(), OF_IMAGE_GRAYSCALE);
-        
-        // update tracking/recording nodes
-        if (isTracking) playUser.update();
-        
-        // demo getting pixels from user gen
-        if (isTracking && isMasking) {
-            allUserMasks.setFromPixels(playUser.getUserPixels(), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-            user1Mask.setFromPixels(playUser.getUserPixels(1), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-            user2Mask.setFromPixels(playUser.getUserPixels(2), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
-        }
-    }
-    
     
     
     
@@ -147,6 +111,48 @@ void testApp::update() {
     
     
     if (gameState == 1) {
+        
+        // NEW KINECT STUFF; if there is a new frame and we are connected
+        if (isLive) {
+            // update all nodes
+            recordContext.update();
+            recordDepth.update();
+            recordImage.update();
+            
+            // demo getting depth pixels directly from depth gen
+            depthRangeMask.setFromPixels(recordDepth.getDepthPixels(nearThreshold, farThreshold),
+                                         recordDepth.getWidth(), recordDepth.getHeight(), OF_IMAGE_GRAYSCALE);
+            
+            // update tracking/recording nodes
+            if (isTracking) recordUser.update();
+            if (isRecording) oniRecorder.update();
+            
+            // demo getting pixels from user gen
+            if (isTracking && isMasking) {
+                allUserMasks.setFromPixels(recordUser.getUserPixels(), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
+                user1Mask.setFromPixels(recordUser.getUserPixels(1), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
+                user2Mask.setFromPixels(recordUser.getUserPixels(2), recordUser.getWidth(), recordUser.getHeight(), OF_IMAGE_GRAYSCALE);
+            }
+        } else {
+            // update all nodes
+            playContext.update();
+            playDepth.update();
+            playImage.update();
+            
+            // demo getting depth pixels directly from depth gen
+            depthRangeMask.setFromPixels(playDepth.getDepthPixels(nearThreshold, farThreshold),
+                                         playDepth.getWidth(), playDepth.getHeight(), OF_IMAGE_GRAYSCALE);
+            
+            // update tracking/recording nodes
+            if (isTracking) playUser.update();
+            
+            // demo getting pixels from user gen
+            if (isTracking && isMasking) {
+                allUserMasks.setFromPixels(playUser.getUserPixels(), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
+                user1Mask.setFromPixels(playUser.getUserPixels(1), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
+                user2Mask.setFromPixels(playUser.getUserPixels(2), playUser.getWidth(), playUser.getHeight(), OF_IMAGE_GRAYSCALE);
+            }
+        }
         
         if (enemyTimeSpawn.size()>0){
             if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
@@ -264,16 +270,16 @@ bool testApp::compareYells() {
 void testApp::draw() {
     ofBackground(0);
     
-    ofSetColor(255, 255, 255);
-    if (isLive) {
-        ofEnableAlphaBlending();
-        ofPushMatrix();
-        ofTranslate(0, 300);
-        recordUser.draw();
-        ofPopMatrix();
-        ofSetColor(0, 0, 0, 150);
-        ofRect(0, 0, 1024, 768);
-    } 
+//    ofSetColor(255, 255, 255);
+//    if (isLive) {
+//        ofEnableAlphaBlending();
+//        ofPushMatrix();
+//        ofTranslate(0, 300);
+//        recordUser.draw();
+//        ofPopMatrix();
+//        ofSetColor(0, 0, 0, 150);
+//        ofRect(0, 0, 1024, 768);
+//    } 
     
     
     // here's where we actually set the positions, using the hip position. a bit wonky but we can tweak later
@@ -344,12 +350,25 @@ void testApp::draw() {
 //            ofLine(ofGetWidth()/2, ofGetHeight()/2, ofGetWidth()/2 + cos(nang)*500, ofGetHeight()/2+sin(nang)*500);
 //        }
 //        ofPopMatrix();
-
         
+        
+        // calibration for each player
         if (blinkCounter%300 > 150) {
-            ofSetColor(255);
-            scoreFont.drawString("SCREAM TO START", ofGetWidth()/2 - 225, ofGetHeight() - 75);
+            if (recordUser.getNumberOfTrackedUsers() == 0) {
+                // if no players are tracked
+                ofSetColor(255);
+                calibrateFont.drawString("CALIBRATE PLAYER 1", 70, ofGetHeight()-50);
+                calibrateFont.drawString("CALIBRATE PLAYER 2", ofGetWidth()/2 + 70, ofGetHeight()-50);
+            }
         }
+        
+        
+        
+        
+//        if (blinkCounter%300 > 150) {
+//            ofSetColor(255);
+//            scoreFont.drawString("SCREAM TO START", ofGetWidth()/2 - 225, ofGetHeight() - 75);
+//        }
         
 
     

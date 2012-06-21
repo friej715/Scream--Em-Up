@@ -121,6 +121,7 @@ public:
     // fonts
     ofTrueTypeFont titleFont;
     ofTrueTypeFont scoreFont;
+    ofTrueTypeFont calibrateFont;
     
     // logo
     ofImage logo;
