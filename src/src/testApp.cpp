@@ -6,7 +6,7 @@
  - ensure all hitboxes work
  - add in explosions
  - add in music
- - add in title screen
+ - fix ts
  - extra credit: add in some kind of recording
  */
 
@@ -16,7 +16,7 @@ void testApp::setup() {
     
     titleFont.loadFont("arcade.ttf", 72);
     scoreFont.loadFont("arcade.ttf", 30);
-    logo.loadImage("logo_sq2.png");
+    logo.loadImage("logo_sq.png");
     
     theme.loadSound("phantom.mp3");
     theme.play();
