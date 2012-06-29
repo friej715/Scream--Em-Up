@@ -2,12 +2,9 @@
 
 /*
  to-do:
- ? 3-2-1
- - fix positions to make them more linear (probably map)
+ - fix hitboxes (boss mainly)
+ - persistent high-score
  
- 
- - phone: make app resettable
- - ensure all hitboxes work
  - extra credit: add in explosions
  - extra credit: add in some kind of recording
  */
@@ -22,7 +19,7 @@ void testApp::setup() {
     calibrateFont.loadFont("arcade.ttf", 20);
     logo.loadImage("logo_sq.png");
     theme.loadSound("phantom.mp3");
-//  theme.play();
+    //theme.play();
     
     
 	ofSetLogLevel(OF_LOG_VERBOSE);
@@ -45,8 +42,8 @@ void testApp::setup() {
 	setupRecording();
     
 // OSC port stuff--will need 2 for 2 players, duh
-    receiverP1.setup(8014);
-    receiverP2.setup(8015);
+    receiverP1.setup(8000);
+    receiverP2.setup(8001);
     
 // setting up the audio
     ofSoundStreamSetup(0, 2, this, 44100, 256, 4);
@@ -54,18 +51,17 @@ void testApp::setup() {
 
 // game variables
     reset(); // resetting the game
-    gameState = 1; // starting at title screen
+    gameState = 3; // starting at title screen
 
 // defining game parameters under the hood
     ofSetFrameRate(300);
     ofSetVerticalSync(false);
     
-    
 }
 
 //--------------------------------------------------------------
 void testApp::update() {
-
+    
 // ---- ALWAYS -----
 // game timers
     bulletTimerP1++; // this can always go up without a problem
@@ -107,26 +103,26 @@ void testApp::update() {
             
             if (recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(trackedA->id) && recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(trackedB->id)) { // honestly no idea what this does
                 if (trackedA->hip.position[1].X < trackedB->hip.position[1].X) { // if A is less than B
-                    player1.xPos = trackedA->hip.position[1].X; // player 1 is A
+                    player1.xPos = ofMap(trackedA->hip.position[1].X, 0, 640, 0, 1024); // player 1 is A
                     player1.isActive = true;
-                    player2.xPos = trackedB->hip.position[1].X; // player 2 is B
+                    player2.xPos = ofMap(trackedB->hip.position[1].X, 0, 640, 0, 1024); // player 2 is B
                     player2.isActive = true;
                 } else { // otherwise
-                    player1.xPos = trackedB->hip.position[1].X; // player 1 is B
+                    player1.xPos = ofMap(trackedB->hip.position[1].X, 0, 640, 0, 1024); // player 1 is B
                     player1.isActive = true;
-                    player2.xPos = trackedA->hip.position[1].X; // player 2 is A
+                    player2.xPos = ofMap(trackedA->hip.position[1].X, 0, 640, 0, 1024); // player 2 is A
                     player2.isActive = true;
                 }
             }
         } else if (recordUser.getNumberOfTrackedUsers() == 1) { // but if there's only one user
             ofxTrackedUser* trackedA = recordUser.getTrackedUser(1); // figure out where they are
             if(recordUser.getXnUserGenerator().GetSkeletonCap().IsTracking(trackedA->id)){ // do magic
-                if (trackedA->hip.position[1].X < ofGetWidth()/2) { // if they're to the left of the midpoint
-                    player1.xPos = trackedA->hip.position[1].X; // they should be player 1
+                if (ofMap(trackedA->hip.position[1].X, 0, 640, 0, 1024) < ofGetWidth()/2) { // if they're to the left of the midpoint
+                    player1.xPos = ofMap(trackedA->hip.position[1].X, 0, 640, 0, 1024); // they should be player 1
                     player1.isActive = true;
                     player2.isActive = false;
                 } else { // otherwise
-                    player2.xPos = trackedA->hip.position[1].X; // they should be player 2
+                    player2.xPos = ofMap(trackedA->hip.position[1].X, 0, 640, 0, 1024); // they should be player 2
                     player2.isActive = true;
                     player1.isActive = false;
                 }
@@ -158,7 +154,6 @@ void testApp::update() {
             if (ofGetElapsedTimeMillis() - gameStartTime > enemyTimeSpawn[0]) {
                 // spawn new enemy
                 Enemy e;
-                cout << "spawn" << endl;
                 e.setup(enemyXPos[0], enemyYPos[0], enemyColors[0]);
                 enemies.push_back(e);
                 // delete from vector
@@ -332,19 +327,39 @@ void testApp::draw() {
 // ----- END SCREEN -----
     if (gameState == 3) {
         
+        // blinking whatever text needs to be blinked
+        blinkCounter++; // we want the winner to be blinked
+        
+        float shake = 0; // let's shake in this part of the game as well
+        shake = ofRandom(1, 5);
+        
+        ofPushMatrix();
+        ofTranslate(ofRandom(shake), ofRandom(shake));
+        // let's print the ratio of enemies shot to total enemies on screen.
+        ofSetColor(255);
+        scoreFont.drawString("Player 1: " + ofToString(player1.numKilled), 70, 50);
+        scoreFont.drawString("Player 2: " + ofToString(player2.numKilled), ofGetWidth()/2+70, 50);
+        
         // didja kill him?
         if (boss.health <= 0) {
-            titleFont.drawString("PWNED!!!1", ofGetWidth()/3, ofGetHeight()/2);
+            titleFont.drawString("BOSS: PWNED!!!1", ofGetWidth()/4, ofGetHeight()/2);
         } else {
-            titleFont.drawString("BOSS\nESCAPED", ofGetWidth()/3, ofGetHeight()/2);
+            titleFont.drawString("BOSS: ESCAPED :(", ofGetWidth()/4, ofGetHeight()/2);
         }
         
         // who won?
         if (player1.numKilled > player2.numKilled) {
-            scoreFont.drawString("PLAYER 1 WINS!!1~", ofGetWidth()/3, 500);
-        } else {
-            scoreFont.drawString("PLAYER 2 WINS!!1~", ofGetWidth()/3, 600);   
+            scoreFont.drawString("WINNER: PLAYER 1 !!1~", ofGetWidth()/4, 600);
+        } else if (player2.numKilled > player1.numKilled) {
+            scoreFont.drawString("WINNER: PLAYER 2!!1~", ofGetWidth()/4, 600);   
+        } else if (player2.numKilled == player1.numKilled) {
+            scoreFont.drawString("WINNER: TIE!11!~!", ofGetWidth()/4, 600);
         }
+        
+        if (blinkCounter%300 > 100) {
+            scoreFont.drawString("THANKS FOR PLAYING!", ofGetWidth()/4, 700);
+        }
+        ofPopMatrix();
     }
 }
 
@@ -446,7 +461,7 @@ void testApp::checkBullets() {
         }
         
         for (int i = 0; i < bulletsP2.size(); i++) {
-            if (ofDist(bulletsP2[i].xPos, bulletsP2[i].yPos, boss.xPos, boss.yPos) < 30) {
+            if (ofDist(bulletsP1[i].xPos, bulletsP1[i].yPos, boss.xPos + 170, boss.yPos - 113) < 170) {
                 boss.health--;
                 player2.numKilled+=200;
                 bulletsP2.erase(bulletsP2.begin()+i);
